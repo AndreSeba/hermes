@@ -131,6 +131,10 @@ public class ProductoService : IProductoService
         var datos = await ValidarAsync(dto, tiendaId, productoId: id, ct);
 
         Aplicar(producto, datos);
+        // Con costeo, el costo del producto es el total de sus componentes: el costo directo que llegue se ignora
+        // (se cambia desde el costeo).
+        if (await _db.Costeos.AsNoTracking().FirstOrDefaultAsync(c => c.ProductoId == id, ct) is { } costeo)
+            producto.Costo = ReglaCosteo.Total(costeo.Material, costeo.Empaque, costeo.ManoDeObra, costeo.CostoFijo);
         producto.ActualizadoEn = _reloj.GetUtcNow();
         var activasAntes = producto.Variantes.Where(v => v.Activa).ToList();
         ReconciliarVariantes(producto, datos.Variantes);

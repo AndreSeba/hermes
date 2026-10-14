@@ -224,6 +224,63 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Hermes.Domain.Entities.Costeo", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("CostoFijo")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("costo_fijo");
+
+                    b.Property<decimal>("Empaque")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("empaque");
+
+                    b.Property<decimal>("ManoDeObra")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("mano_de_obra");
+
+                    b.Property<int>("MargenObjetivo")
+                        .HasColumnType("integer")
+                        .HasColumnName("margen_objetivo");
+
+                    b.Property<decimal>("Material")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("material");
+
+                    b.Property<Guid>("ProductoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("producto_id");
+
+                    b.Property<Guid>("TiendaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tienda_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_costeos");
+
+                    b.HasIndex("ProductoId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_costeos_producto_id");
+
+                    b.HasIndex("TiendaId")
+                        .HasDatabaseName("ix_costeos_tienda_id");
+
+                    b.ToTable("costeos", "hermes", t =>
+                        {
+                            t.HasCheckConstraint("ck_costeo_componentes", "material >= 0 and empaque >= 0 and mano_de_obra >= 0 and costo_fijo >= 0");
+
+                            t.HasCheckConstraint("ck_costeo_margen", "margen_objetivo between 1 and 90");
+                        });
+                });
+
             modelBuilder.Entity("Hermes.Domain.Entities.Imagen", b =>
                 {
                     b.Property<Guid>("Id")
@@ -896,6 +953,23 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_compra_lineas_variantes_variante_id");
 
                     b.Navigation("Compra");
+                });
+
+            modelBuilder.Entity("Hermes.Domain.Entities.Costeo", b =>
+                {
+                    b.HasOne("Hermes.Domain.Entities.Producto", null)
+                        .WithMany()
+                        .HasForeignKey("ProductoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_costeos_productos_producto_id");
+
+                    b.HasOne("Hermes.Domain.Entities.Tienda", null)
+                        .WithMany()
+                        .HasForeignKey("TiendaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_costeos_tiendas_tienda_id");
                 });
 
             modelBuilder.Entity("Hermes.Domain.Entities.Imagen", b =>

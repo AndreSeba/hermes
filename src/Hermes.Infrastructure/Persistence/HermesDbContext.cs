@@ -26,6 +26,7 @@ public class HermesDbContext : DbContext
     public DbSet<MovimientoStock> Movimientos => Set<MovimientoStock>();
     public DbSet<Venta> Ventas => Set<Venta>();
     public DbSet<VentaLinea> VentaLineas => Set<VentaLinea>();
+    public DbSet<Costeo> Costeos => Set<Costeo>();
     public DbSet<Proveedor> Proveedores => Set<Proveedor>();
     public DbSet<Compra> Compras => Set<Compra>();
     public DbSet<CompraLinea> CompraLineas => Set<CompraLinea>();

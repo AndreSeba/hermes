@@ -176,8 +176,9 @@ public class CompraService : ICompraService
         {
             var producto = productos[l.ProductoId];
             l.SumoStock = producto.ControlaStock;
-            // "El costo se actualiza cuando llega mercadería": el de la compra pasa a ser el del producto.
-            producto.Costo = l.CostoUnitario;
+            // "El costo se actualiza cuando llega mercadería": el de la compra pasa a ser el del producto (o el
+            // componente "material" de su costeo, si lo tiene).
+            await CostoDelProducto.FijarPagadoAsync(_db, producto, l.CostoUnitario, ct);
             producto.ActualizadoEn = _reloj.GetUtcNow();
         }
 

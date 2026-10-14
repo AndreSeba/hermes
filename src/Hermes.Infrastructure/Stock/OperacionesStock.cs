@@ -81,7 +81,8 @@ public class OperacionesStock : IOperacionesStock
         if (tipo == TipoMovimiento.Ingreso && costoUnitario > 0)
             foreach (var producto in productosTocados)
             {
-                producto.Costo = costoUnitario.Value;
+                // Con costeo, el costo pagado es el componente "material" (el costo del producto sigue siendo el total).
+                await Services.CostoDelProducto.FijarPagadoAsync(_db, producto, costoUnitario.Value, ct);
                 producto.ActualizadoEn = ahora;
             }
 

@@ -170,7 +170,10 @@ resta el stock que sumó (409 si ya se vendió); el costo del producto no vuelve
 - Front: **Proveedores**, **Compras**, **Nueva compra**, "Pedirle a …" por WhatsApp.
 - Listo cuando: registro una compra, la recibo, el stock y el costo se actualizan y veo el aviso de margen.
 
-### M8 · Costos y precio sugerido — **M**
+### M8 · Costos y precio sugerido — **M** ✅ (2026-10-14)
+Hecho. Precio sugerido = `costo ÷ (1 − margen)` redondeado hacia arriba al entero; con costeo, el costo del producto es
+siempre el total de los componentes y recibir una compra (o "Llegaron más" con costo) actualiza el Material. 16 pruebas +
+`scripts/e2e_costeo.py` + e2e del front (136 verificaciones en total). No incluido: costeo por variante, markup.
 - Backend: costeo opcional por producto (material, empaque, mano de obra, costo fijo) y margen
   objetivo. **El precio sugerido se calcula, no se guarda.** Si hay costeo, recibir una compra
   actualiza el componente "material".
