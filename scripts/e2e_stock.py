@@ -2,7 +2,7 @@
 
 Cubre lo que las pruebas unitarias (SQLite) no pueden: el orden por urgencia y el cursor compuesto en SQL
 real, los totales sumados en la base y las restricciones. La concurrencia (ventas simultáneas) la cubre la
-prueba xUnit con HERMES_TEST_PG, porque la API todavía no expone ventas (M6).
+prueba xUnit con HERMES_TEST_PG y por scripts/e2e_ventas.py (peticiones HTTP simultáneas).
 Necesita la API corriendo (perfil http, puerto 5013). Solo para desarrollo. Crea cuentas de prueba en hermes_dev.
 Uso: python -I scripts/e2e_stock.py
 """

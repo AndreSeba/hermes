@@ -24,7 +24,7 @@ public class OperacionesStock : IOperacionesStock
 
     public async Task<IReadOnlyDictionary<Guid, int>> AplicarAsync(
         TipoMovimiento tipo, IReadOnlyList<LineaMovimiento> lineas, string? nota, decimal? costoUnitario,
-        bool ignorarSinControl, CancellationToken ct)
+        bool ignorarSinControl, CancellationToken ct, Guid? ventaId = null)
     {
         ExigirTransaccion();
         if (lineas.Count == 0) throw new ValidacionException("No hay nada para registrar.");
@@ -54,7 +54,8 @@ public class OperacionesStock : IOperacionesStock
                 if (ignorarSinControl) continue;
                 throw new ProductoSinControlDeStockException(producto.Nombre);
             }
-            if (!variante.Activa)
+            // Anular una venta tiene que poder devolver el stock aunque la variante se haya desactivado después.
+            if (!variante.Activa && tipo != TipoMovimiento.Devolucion)
                 throw new ValidacionException($"{NombreCompleto(variante)} está desactivada: no se puede mover su stock.");
 
             var cantidad = (int)porVariante[id];
@@ -65,7 +66,7 @@ public class OperacionesStock : IOperacionesStock
 
             _db.Movimientos.Add(new MovimientoStock
             {
-                VarianteId = id, Tipo = tipo, Cantidad = cantidad, Saldo = (int)saldo, Nota = nota,
+                VarianteId = id, Tipo = tipo, Cantidad = cantidad, Saldo = (int)saldo, Nota = nota, VentaId = ventaId,
                 CostoUnitario = tipo == TipoMovimiento.Ingreso && costoUnitario > 0 ? costoUnitario : null,
                 CreadoEn = ahora,
             });

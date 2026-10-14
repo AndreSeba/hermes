@@ -20,6 +20,9 @@ public class MovimientoStock : IPerteneceATienda
     // así que es exacto. Nunca negativo (CHECK).
     public int Saldo { get; set; }
 
+    // La venta que lo originó (Venta y Devolucion). null en llegadas y correcciones.
+    public Guid? VentaId { get; set; }
+
     public string? Nota { get; set; }
     // Solo en ingresos donde la dueña dijo cuánto pagó por unidad.
     public decimal? CostoUnitario { get; set; }

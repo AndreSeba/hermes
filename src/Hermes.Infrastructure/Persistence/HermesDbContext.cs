@@ -24,6 +24,8 @@ public class HermesDbContext : DbContext
     public DbSet<Variante> Variantes => Set<Variante>();
     public DbSet<ProductoFoto> ProductoFotos => Set<ProductoFoto>();
     public DbSet<MovimientoStock> Movimientos => Set<MovimientoStock>();
+    public DbSet<Venta> Ventas => Set<Venta>();
+    public DbSet<VentaLinea> VentaLineas => Set<VentaLinea>();
     public DbSet<Imagen> Imagenes => Set<Imagen>();
     public DbSet<Archivo> Archivos => Set<Archivo>();
     public DbSet<Categoria> Categorias => Set<Categoria>();

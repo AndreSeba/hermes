@@ -143,11 +143,16 @@ total). Queda para M7 el proveedor en "Llegaron más" y para M9 las alertas de I
   historial por producto.
 - Listo cuando: "Llegaron más" suma, un ajuste exige motivo y el historial muestra todo.
 
-### M6 · Ventas — **M**
+### M6 · Ventas — **M** ✅ (2026-10-14)
+Hecho como **venta rápida** (decisión del usuario): productos, cantidades, forma de pago y cliente opcional; sin
+descuentos, precio editable ni fecha manual. 27 pruebas unitarias + 3 de concurrencia con Postgres real +
+`scripts/e2e_ventas.py` (peticiones simultáneas por HTTP) + e2e del front (104 verificaciones en total). Queda para M9
+el medidor de gastos en la pantalla de venta.
 - Backend: `Venta` + `VentaLinea` (variante, cantidad, precio y **costo del momento**), método de pago
-  (efectivo, QR, transferencia, otro), cliente opcional. Descuenta stock en la misma transacción.
-  Anular devuelve el stock (nunca se borra una venta).
-- Front: **Nueva venta** (rápida, pensada para una mano), listado del día/mes, anular.
+  (efectivo, QR, tarjeta, transferencia), cliente opcional. Descuenta stock en la misma transacción.
+  Anular devuelve el stock (nunca se borra una venta). **Idempotencia** por clave generada en el celular: un doble
+  toque o un reintento por mala señal no duplica la venta.
+- Front: **Nueva venta** (rápida, pensada para una mano), listado del día/semana/mes, anular.
 - Pruebas: venta sin stock suficiente → 409; ventas simultáneas sobre la última unidad → solo una pasa.
 - Listo cuando: vendo 2 productos, el stock baja y la ganancia de la venta es correcta.
 

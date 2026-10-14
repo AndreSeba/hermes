@@ -66,6 +66,22 @@ public class SlugNoDisponibleException : DominioException
         : base($"La dirección '{slug}' ya está en uso. Probá con otra.") { }
 }
 
+public class VentaNoEncontradaException : DominioException
+{
+    public override int Status => 404;
+
+    public VentaNoEncontradaException(Guid id)
+        : base($"No existe la venta {id}.") { }
+}
+
+public class VentaYaAnuladaException : DominioException
+{
+    public override int Status => 409;
+
+    public VentaYaAnuladaException()
+        : base("Esa venta ya estaba anulada.") { }
+}
+
 public class StockInsuficienteException : DominioException
 {
     public override int Status => 409;

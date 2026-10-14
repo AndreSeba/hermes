@@ -20,6 +20,10 @@ public class MovimientoStockConfiguration : IEntityTypeConfiguration<MovimientoS
         builder.HasOne(m => m.Variante).WithMany(v => v.Movimientos)
             .HasForeignKey(m => m.VarianteId).OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne<Venta>().WithMany()
+            .HasForeignKey(m => m.VentaId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(m => m.VentaId);
+
         // Sumar el stock de una variante y leer su historial pasan por acá.
         builder.HasIndex(m => new { m.VarianteId, m.Id });
 

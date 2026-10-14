@@ -15,10 +15,12 @@ public interface IOperacionesStock
     // Suma/resta cantidades con signo (Ingreso/Devolucion: positivas; Venta: negativas).
     // `ignorarSinControl`: las variantes de productos sin control de stock se saltean en vez de fallar
     // (lo que quiere una venta que mezcla productos con y sin control).
+    // `ventaId`: la venta que lo originó (queda en el movimiento, para el historial).
+    // Una Devolucion (venta anulada) se permite también sobre variantes que ya se desactivaron.
     // Devuelve el saldo que quedó de cada variante tocada.
     Task<IReadOnlyDictionary<Guid, int>> AplicarAsync(
         TipoMovimiento tipo, IReadOnlyList<LineaMovimiento> lineas, string? nota, decimal? costoUnitario,
-        bool ignorarSinControl, CancellationToken ct);
+        bool ignorarSinControl, CancellationToken ct, Guid? ventaId = null);
 
     // Deja cada variante en el total indicado (Ajuste): calcula la diferencia dentro del candado.
     Task<IReadOnlyDictionary<Guid, int>> FijarTotalesAsync(
