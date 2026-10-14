@@ -25,7 +25,6 @@ var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOption
     ?? throw new InvalidOperationException("Falta la sección 'Jwt' en la configuración.");
 if (jwt.SecretKey.Length < 32)
     throw new InvalidOperationException("Falta 'Jwt:SecretKey' (mínimo 32 caracteres). En desarrollo: dotnet user-secrets set \"Jwt:SecretKey\" \"...\" --project src/Hermes.Api");
-builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -43,6 +42,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 builder.Services.AddAuthorization();
+builder.Services.AddLimites();
 
 // CORS con lista explícita de orígenes (nunca AllowAnyOrigin) — el frontend React vive en
 // otro repo (../Hermes.Web) y otro puerto.
@@ -78,6 +78,7 @@ if (!app.Environment.IsDevelopment())
 app.UseCors("Web");
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 app.MapControllers();
 
 // Si el código es más nuevo que la base, avisarlo al arrancar ahorra buscar el problema en otro lado.

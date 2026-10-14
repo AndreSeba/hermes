@@ -1,5 +1,6 @@
 using Hermes.Application.Interfaces;
 using Hermes.Infrastructure.Persistence;
+using Hermes.Infrastructure.Security;
 using Hermes.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -19,6 +20,13 @@ public static class DependencyInjection
             .UseNpgsql(connectionString, npgsql => npgsql.MigrationsHistoryTable("__ef_migraciones", HermesDbContext.Esquema))
             .UseSnakeCaseNamingConvention());
 
+        services.AddSingleton(TimeProvider.System);
+        services.AddMemoryCache();
+        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+        services.AddSingleton<JwtTokenService>();
+        services.AddSingleton<BloqueoDeLogin>();
+
+        services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ICategoriaService, CategoriaService>();
 
         return services;

@@ -19,6 +19,7 @@ public class HermesDbContext : DbContext
 
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<Tienda> Tiendas => Set<Tienda>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Categoria> Categorias => Set<Categoria>();
 
     // Lo lee el filtro global en cada consulta (EF lo parametriza por instancia del contexto),

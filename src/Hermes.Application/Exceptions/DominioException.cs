@@ -25,6 +25,47 @@ public class SinTiendaEnSesionException : DominioException
         : base("La sesión no tiene una tienda asociada.") { }
 }
 
+// Mismo mensaje para email inexistente y contraseña incorrecta: no revelar qué cuentas existen.
+public class CredencialesInvalidasException : DominioException
+{
+    public override int Status => 401;
+
+    public CredencialesInvalidasException()
+        : base("Email o contraseña incorrectos.") { }
+}
+
+public class LoginBloqueadoException : DominioException
+{
+    public override int Status => 429;
+
+    public LoginBloqueadoException(int minutos)
+        : base($"Demasiados intentos fallidos. Probá de nuevo en {minutos} minutos.") { }
+}
+
+public class SesionInvalidaException : DominioException
+{
+    public override int Status => 401;
+
+    public SesionInvalidaException()
+        : base("Tu sesión venció. Iniciá sesión de nuevo.") { }
+}
+
+public class EmailYaRegistradoException : DominioException
+{
+    public override int Status => 409;
+
+    public EmailYaRegistradoException()
+        : base("Ya existe una cuenta con ese email. ¿Querés iniciar sesión?") { }
+}
+
+public class SlugNoDisponibleException : DominioException
+{
+    public override int Status => 409;
+
+    public SlugNoDisponibleException(string slug)
+        : base($"La dirección '{slug}' ya está en uso. Probá con otra.") { }
+}
+
 public class CategoriaNoEncontradaException : DominioException
 {
     public override int Status => 404;

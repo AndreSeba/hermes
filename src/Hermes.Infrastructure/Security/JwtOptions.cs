@@ -8,6 +8,7 @@ public class JwtOptions
     public string Audience { get; set; } = string.Empty;
     // NUNCA en appsettings: dotnet user-secrets set "Jwt:SecretKey" "..." o la variable Jwt__SecretKey.
     public string SecretKey { get; set; } = string.Empty;
-    // Token de acceso corto; la sesión larga se sostiene con el refresh token (pendiente).
+    // Token de acceso corto; la sesión larga se sostiene con el refresh token.
     public int ExpiracionMinutos { get; set; } = 15;
+    public int RefreshDias { get; set; } = 30;
 }
