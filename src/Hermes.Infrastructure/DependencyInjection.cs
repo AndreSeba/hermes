@@ -36,6 +36,7 @@ public static class DependencyInjection
         services.AddScoped<IOperacionesStock, OperacionesStock>();
         services.AddScoped<IStockService, StockService>();
         services.AddScoped<IVentaService, VentaService>();
+        services.AddScoped<IInstagramService, InstagramService>();
         services.AddScoped<TiendaPublicaContexto>();
         services.AddScoped<IPublicoService, PublicoService>();
         services.AddScoped<IGastoService, GastoService>();

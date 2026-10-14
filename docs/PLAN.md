@@ -210,7 +210,11 @@ No incluido: código QR, redirección de direcciones viejas, carrito, vista prev
 - Pruebas: ningún endpoint público expone costo ni stock; una tienda inactiva no se muestra.
 - Listo cuando: comparto el enlace por WhatsApp, se ve la vista previa y el pedido llega armado.
 
-### M11 · Lector de Instagram por reglas — **M**
+### M11 · Lector de Instagram por reglas — **M** ✅ (2026-10-14)
+Hecho. El lector (lógica pura) entiende nombre, precio, ofertas, colores, tallas, stock, categoría por hashtag y carruseles, y
+**no inventa**: lo que no encuentra queda vacío y avisa. Cada producto va a una **bandeja de revisión**; nada llega al catálogo
+sin que la dueña lo publique. 37 pruebas (28 textos tipo Instagram) + `scripts/e2e_instagram.py` + e2e del panel (177
+verificaciones en total). No incluido: fotos, conexión con Instagram (M12), pegar dos veces el mismo texto no se detecta.
 Se puede hacer **sin Meta**: el parser es lógica pura.
 - Backend: parser (nombre = primera línea, "Bs 120"/"Precio: 120", "Colores: …", "Tallas: …",
   "Quedan N", categoría por hashtag, carruseles "1. Cartera Bs 120", ofertas "ahora Bs …").

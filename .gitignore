@@ -480,3 +480,6 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Credenciales de la tienda de demostración (solo desarrollo)
+scripts/demo.local.json

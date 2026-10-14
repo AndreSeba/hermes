@@ -139,6 +139,22 @@ public class TiendaPublicaNoEncontradaException : DominioException
         : base("No encontramos esta tienda.") { }
 }
 
+public class BorradorNoEncontradoException : DominioException
+{
+    public override int Status => 404;
+
+    public BorradorNoEncontradoException(Guid id)
+        : base($"No existe ese producto en la bandeja ({id}).") { }
+}
+
+public class BorradorYaResueltoException : DominioException
+{
+    public override int Status => 409;
+
+    public BorradorYaResueltoException()
+        : base("Ese producto ya se publicó o se descartó.") { }
+}
+
 public class StockInsuficienteException : DominioException
 {
     public override int Status => 409;

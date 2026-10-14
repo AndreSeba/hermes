@@ -55,6 +55,107 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                     b.ToTable("archivos", "hermes");
                 });
 
+            modelBuilder.Entity("Hermes.Domain.Entities.Borrador", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Avisos")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("avisos");
+
+                    b.Property<string>("Categoria")
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("categoria");
+
+                    b.Property<string>("Colores")
+                        .IsRequired()
+                        .HasMaxLength(600)
+                        .HasColumnType("character varying(600)")
+                        .HasColumnName("colores");
+
+                    b.Property<DateTimeOffset>("CreadoEn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("creado_en");
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("descripcion");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)")
+                        .HasColumnName("estado");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("nombre");
+
+                    b.Property<string>("Origen")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("origen");
+
+                    b.Property<decimal?>("Precio")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("precio");
+
+                    b.Property<decimal?>("PrecioAnterior")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("precio_anterior");
+
+                    b.Property<Guid?>("ProductoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("producto_id");
+
+                    b.Property<DateTimeOffset?>("ResueltoEn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("resuelto_en");
+
+                    b.Property<int?>("Stock")
+                        .HasColumnType("integer")
+                        .HasColumnName("stock");
+
+                    b.Property<string>("Tallas")
+                        .IsRequired()
+                        .HasMaxLength(600)
+                        .HasColumnType("character varying(600)")
+                        .HasColumnName("tallas");
+
+                    b.Property<string>("Texto")
+                        .IsRequired()
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)")
+                        .HasColumnName("texto");
+
+                    b.Property<Guid>("TiendaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tienda_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_borradores");
+
+                    b.HasIndex("ProductoId")
+                        .HasDatabaseName("ix_borradores_producto_id");
+
+                    b.HasIndex("TiendaId", "Estado", "Id")
+                        .HasDatabaseName("ix_borradores_tienda_id_estado_id");
+
+                    b.ToTable("borradores", "hermes");
+                });
+
             modelBuilder.Entity("Hermes.Domain.Entities.Categoria", b =>
                 {
                     b.Property<Guid>("Id")
@@ -963,6 +1064,22 @@ namespace Hermes.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("ck_venta_linea_precio", "precio_unitario > 0");
                         });
+                });
+
+            modelBuilder.Entity("Hermes.Domain.Entities.Borrador", b =>
+                {
+                    b.HasOne("Hermes.Domain.Entities.Producto", null)
+                        .WithMany()
+                        .HasForeignKey("ProductoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_borradores_productos_producto_id");
+
+                    b.HasOne("Hermes.Domain.Entities.Tienda", null)
+                        .WithMany()
+                        .HasForeignKey("TiendaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_borradores_tiendas_tienda_id");
                 });
 
             modelBuilder.Entity("Hermes.Domain.Entities.Categoria", b =>

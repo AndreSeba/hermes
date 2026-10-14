@@ -1,7 +1,7 @@
 # Decisiones tomadas sin consultar
 
 Registro de lo que se decidió por criterio propio mientras se construía (sin que el usuario lo pidiera de forma
-explícita). Cubre M0 a M10 (las de M6–M10 van primero; las de M0–M5 están en "Módulos anteriores"). Cada módulo nuevo
+explícita). Cubre M0 a M11 (las de M6–M11 van primero; las de M0–M5 están en "Módulos anteriores"). Cada módulo nuevo
 agrega acá las suyas. Cada una dice **por qué** y **cómo se cambia**. Las marcadas con ⚠️ son las que más conviene revisar
 porque cambian lo que ve o paga la dueña, o son difíciles de revertir.
 
@@ -77,6 +77,24 @@ producto (encendido por defecto) y "venta rápida" con cliente opcional.
 | 50 | Detuve y reinicié el proceso de la API en tu PC varias veces para compilar (solo el proceso de la API). |
 | 51 | Creé cuentas de prueba y datos de prueba en `hermes_dev` con cada corrida de los scripts e2e (se acumulan; es la base de desarrollo). |
 | 52 | Las capturas de pantalla de `docs/capturas/` se regeneran en cada e2e y se commitean. |
+
+## Lector de Instagram (M11)
+
+| # | Decisión | Por qué / cómo cambiarla |
+|---|---|---|
+| 116 ⚠️ | **Nada llega al catálogo solo**: lo que se lee va a una bandeja de revisión y la dueña lo publica. | La propuesta central del producto era "se carga solo"; elegí revisión porque un lector por reglas se equivoca a veces y un precio mal en el catálogo es peor que un paso más. Se podría agregar "publicar directo si está completo". |
+| 117 ⚠️ | **El lector nunca inventa**: lo que no encuentra queda vacío y avisa. Con varios precios sin marcar toma el primero y avisa. | Un dato inventado en una tienda es un error de plata. |
+| 118 ⚠️ | **La categoría sale del primer hashtag que no sea genérico**; la lista de genéricos la armé yo (`#hechoamano`, `#bolivia`, ciudades, `#oferta`, `#nuevo`…) en `ParserPublicacion.HashtagsGenericos`. | Hay que ampliarla con textos reales de tus clientas. |
+| 119 | **La categoría solo se asigna si coincide (sin tildes ni mayúsculas) con una que ya existe**; si no, queda "Sin categoría". No crea categorías solo. | Evita llenar el catálogo de categorías por hashtags sueltos. |
+| 120 | **"1.200" se entiende como mil doscientos y "58,50" como cincuenta y ocho con cincuenta**; montos de más de Bs 1.000.000 se ignoran. | Formato boliviano de números. |
+| 121 | **Un carrusel son 2 o más líneas numeradas que tengan precio**; una sola línea numerada no lo es. Lo suelto (colores, tallas, stock, categoría) vale para todos. | Lo que pide el plan. |
+| 122 | **"Talla: única" no es una talla** (el producto queda como "Único"). | Coherente con cómo el catálogo trata "sin variantes". |
+| 123 ⚠️ | **"Quedan N" solo se carga como stock si el producto lleva control y tiene UNA sola variante**; con varios colores/talles se avisa y se carga a mano. | No se sabe cuántas son de cada una. |
+| 124 | **Topes**: texto de 5000 caracteres, 20 productos por publicación, 200 pendientes en la bandeja. | Contra abusos y errores. |
+| 125 | **Pegar dos veces el mismo texto crea dos borradores** (sin idempotencia en `importar`). | Se descartan; es raro y no pierde plata. |
+| 126 | **Las fotos no vienen en el texto**: se agregan al revisar. La conexión automática con Instagram (y sus fotos) es M12. | Sin Meta no hay fotos. |
+| 127 | **Un borrador nunca se borra**: se publica o se descarta (queda registrado). | Mismo criterio del proyecto. |
+| 128 | **Creé una tienda de demostración** (`scripts/crear_demo.py`) con tu WhatsApp **76815206** y 3 productos de ejemplo, porque la base de desarrollo no tenía ninguna cuenta real (las 98 eran de pruebas). Las credenciales las generé yo y están en `scripts/demo.local.json` (ignorado por git, no impreso). | Para que pruebes con datos parecidos a los tuyos. Cuando te registres con tu cuenta real, ahí cargás tu número en Mi tienda. |
 
 ## Tienda pública (M10)
 

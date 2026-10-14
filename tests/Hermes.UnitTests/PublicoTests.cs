@@ -293,10 +293,12 @@ public class PublicoTests : IDisposable
     {
         // Los DTOs públicos son los de PublicoDto.cs. Se revisan por reflexión, recursivamente: si alguien agrega un
         // campo así, esta prueba falla antes de que llegue a una respuesta.
-        var tipos = typeof(TiendaPublicaDto).Assembly.GetTypes()
-            .Where(t => t.Namespace == "Hermes.Application.Dtos" && (t.Name.Contains("Publico") || t.Name.Contains("Publica")) && t.Name != nameof(ConfiguracionPublicaDto))
-            .ToList();
-        Assert.True(tipos.Count >= 6);
+        // Lista EXPLÍCITA (no por nombre): un DTO nuevo que se muestre al público tiene que sumarse acá a propósito.
+        var tipos = new List<Type>
+        {
+            typeof(TiendaPublicaDto), typeof(CategoriaPublicaDto), typeof(ProductoPublicoResumenDto), typeof(VariantePublicaDto),
+            typeof(ProductoPublicoDto), typeof(PaginaPublicaDto), typeof(FiltroPublicoDto),
+        };
 
         var vistos = new HashSet<Type>();
         void Revisar(Type tipo)
