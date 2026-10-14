@@ -82,6 +82,38 @@ public class VentaYaAnuladaException : DominioException
         : base("Esa venta ya estaba anulada.") { }
 }
 
+public class ProveedorNoEncontradoException : DominioException
+{
+    public override int Status => 404;
+
+    public ProveedorNoEncontradoException(Guid id)
+        : base($"No existe el proveedor {id}.") { }
+}
+
+public class ProveedorDuplicadoException : DominioException
+{
+    public override int Status => 409;
+
+    public ProveedorDuplicadoException(string nombre)
+        : base($"Ya tenés un proveedor llamado '{nombre}'.") { }
+}
+
+public class CompraNoEncontradaException : DominioException
+{
+    public override int Status => 404;
+
+    public CompraNoEncontradaException(Guid id)
+        : base($"No existe la compra {id}.") { }
+}
+
+// Una compra anulada ya no se puede recibir ni pagar; una recibida/pagada no se vuelve a recibir/pagar.
+public class CompraEstadoInvalidoException : DominioException
+{
+    public override int Status => 409;
+
+    public CompraEstadoInvalidoException(string message) : base(message) { }
+}
+
 public class StockInsuficienteException : DominioException
 {
     public override int Status => 409;

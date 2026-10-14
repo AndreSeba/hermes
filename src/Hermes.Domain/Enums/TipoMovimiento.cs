@@ -7,4 +7,5 @@ public enum TipoMovimiento
     Ajuste,     // la dueña contó y hay otra cantidad: suma o resta la diferencia (con motivo)
     Venta,      // resta (M6)
     Devolucion, // suma: se anuló una venta (M6)
+    Reversion,  // resta: se anuló una compra que ya se había recibido (M7)
 }

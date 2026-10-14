@@ -24,13 +24,14 @@ public class OperacionesStock : IOperacionesStock
 
     public async Task<IReadOnlyDictionary<Guid, int>> AplicarAsync(
         TipoMovimiento tipo, IReadOnlyList<LineaMovimiento> lineas, string? nota, decimal? costoUnitario,
-        bool ignorarSinControl, CancellationToken ct, Guid? ventaId = null)
+        bool ignorarSinControl, CancellationToken ct, Guid? ventaId = null, Guid? compraId = null)
     {
         ExigirTransaccion();
         if (lineas.Count == 0) throw new ValidacionException("No hay nada para registrar.");
 
         // Una variante repetida en la misma operación se junta en una sola línea.
         var porVariante = lineas.GroupBy(l => l.VarianteId).ToDictionary(g => g.Key, g => g.Sum(l => (long)l.Cantidad));
+        var costoPorVariante = lineas.Where(l => l.CostoUnitario > 0).GroupBy(l => l.VarianteId).ToDictionary(g => g.Key, g => g.Last().CostoUnitario);
         foreach (var (_, cantidad) in porVariante)
         {
             var signoOk = tipo is TipoMovimiento.Ingreso or TipoMovimiento.Devolucion ? cantidad > 0 : cantidad < 0;
@@ -54,8 +55,8 @@ public class OperacionesStock : IOperacionesStock
                 if (ignorarSinControl) continue;
                 throw new ProductoSinControlDeStockException(producto.Nombre);
             }
-            // Anular una venta tiene que poder devolver el stock aunque la variante se haya desactivado después.
-            if (!variante.Activa && tipo != TipoMovimiento.Devolucion)
+            // Anular una venta o una compra tiene que poder deshacer el stock aunque la variante se haya desactivado después.
+            if (!variante.Activa && tipo is not (TipoMovimiento.Devolucion or TipoMovimiento.Reversion))
                 throw new ValidacionException($"{NombreCompleto(variante)} está desactivada: no se puede mover su stock.");
 
             var cantidad = (int)porVariante[id];
@@ -66,8 +67,10 @@ public class OperacionesStock : IOperacionesStock
 
             _db.Movimientos.Add(new MovimientoStock
             {
-                VarianteId = id, Tipo = tipo, Cantidad = cantidad, Saldo = (int)saldo, Nota = nota, VentaId = ventaId,
-                CostoUnitario = tipo == TipoMovimiento.Ingreso && costoUnitario > 0 ? costoUnitario : null,
+                VarianteId = id, Tipo = tipo, Cantidad = cantidad, Saldo = (int)saldo, Nota = nota, VentaId = ventaId, CompraId = compraId,
+                CostoUnitario = tipo == TipoMovimiento.Ingreso
+                    ? (costoPorVariante.TryGetValue(id, out var propio) ? propio : costoUnitario > 0 ? costoUnitario : null)
+                    : null,
                 CreadoEn = ahora,
             });
             saldos[id] = (int)saldo;

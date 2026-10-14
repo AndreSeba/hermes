@@ -22,6 +22,8 @@ public class MovimientoStock : IPerteneceATienda
 
     // La venta que lo originó (Venta y Devolucion). null en llegadas y correcciones.
     public Guid? VentaId { get; set; }
+    // La compra que lo originó (Ingreso al recibirla y Reversion al anularla).
+    public Guid? CompraId { get; set; }
 
     public string? Nota { get; set; }
     // Solo en ingresos donde la dueña dijo cuánto pagó por unidad.

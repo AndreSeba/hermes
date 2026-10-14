@@ -156,7 +156,11 @@ el medidor de gastos en la pantalla de venta.
 - Pruebas: venta sin stock suficiente → 409; ventas simultáneas sobre la última unidad → solo una pasa.
 - Listo cuando: vendo 2 productos, el stock baja y la ganancia de la venta es correcta.
 
-### M7 · Proveedores y compras — **L**
+### M7 · Proveedores y compras — **L** ✅ (2026-10-14)
+Hecho. 34 pruebas unitarias + 3 de concurrencia con Postgres real + `scripts/e2e_compras.py` (peticiones simultáneas
+por HTTP) + e2e del front (128 verificaciones en total). **No entró** (a propósito): el proveedor dentro de "Llegaron
+más", el proveedor por producto, fecha manual y pagos parciales. Una compra se **anula** (no se borra): si ya llegó,
+resta el stock que sumó (409 si ya se vendió); el costo del producto no vuelve al anterior.
 - Backend: `Proveedor`, `Compra` + `CompraLinea` (variante, cantidad, costo), estados **recibida** y
   **pagada**.
   - **Recibir** (una sola vez, transición atómica): suma stock, actualiza el costo del producto y
