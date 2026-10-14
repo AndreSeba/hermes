@@ -114,6 +114,22 @@ public class CompraEstadoInvalidoException : DominioException
     public CompraEstadoInvalidoException(string message) : base(message) { }
 }
 
+public class GastoNoEncontradoException : DominioException
+{
+    public override int Status => 404;
+
+    public GastoNoEncontradoException(Guid id)
+        : base($"No existe el gasto {id}.") { }
+}
+
+public class GastoYaAnuladoException : DominioException
+{
+    public override int Status => 409;
+
+    public GastoYaAnuladoException()
+        : base("Ese gasto ya estaba anulado.") { }
+}
+
 public class StockInsuficienteException : DominioException
 {
     public override int Status => 409;

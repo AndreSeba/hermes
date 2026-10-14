@@ -281,6 +281,60 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Hermes.Domain.Entities.Gasto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("Anulado")
+                        .HasColumnType("boolean")
+                        .HasColumnName("anulado");
+
+                    b.Property<DateTime?>("AnuladoEn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("anulado_en");
+
+                    b.Property<Guid>("ClaveIdempotencia")
+                        .HasColumnType("uuid")
+                        .HasColumnName("clave_idempotencia");
+
+                    b.Property<string>("Concepto")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("concepto");
+
+                    b.Property<DateTime>("Fecha")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("fecha");
+
+                    b.Property<decimal>("Monto")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("monto");
+
+                    b.Property<Guid>("TiendaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tienda_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_gastos");
+
+                    b.HasIndex("TiendaId", "ClaveIdempotencia")
+                        .IsUnique()
+                        .HasDatabaseName("ix_gastos_tienda_id_clave_idempotencia");
+
+                    b.HasIndex("TiendaId", "Fecha")
+                        .HasDatabaseName("ix_gastos_tienda_id_fecha");
+
+                    b.ToTable("gastos", "hermes", t =>
+                        {
+                            t.HasCheckConstraint("ck_gasto_monto", "monto > 0");
+                        });
+                });
+
             modelBuilder.Entity("Hermes.Domain.Entities.Imagen", b =>
                 {
                     b.Property<Guid>("Id")
@@ -970,6 +1024,16 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_costeos_tiendas_tienda_id");
+                });
+
+            modelBuilder.Entity("Hermes.Domain.Entities.Gasto", b =>
+                {
+                    b.HasOne("Hermes.Domain.Entities.Tienda", null)
+                        .WithMany()
+                        .HasForeignKey("TiendaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_gastos_tiendas_tienda_id");
                 });
 
             modelBuilder.Entity("Hermes.Domain.Entities.Imagen", b =>

@@ -180,7 +180,11 @@ siempre el total de los componentes y recibir una compra (o "Llegaron más" con 
 - Front: **Calculadora de precio** dentro del producto, con el precio sugerido y la ganancia por unidad.
 - Listo cuando: cambio el costo de material y el precio sugerido cambia; el precio real no se toca solo.
 
-### M9 · Inicio y gastos — **M**
+### M9 · Inicio y gastos — **M** ✅ (2026-10-14)
+Hecho. Gastos anulables e idempotentes; el Inicio compone ventas, compras, stock y gastos del mes de quien mira. "Ya
+cubriste el X %" = ganancia ÷ gastos, redondeado hacia abajo. También se hizo el medidor en "¡Venta registrada!". 19
+pruebas + `scripts/e2e_inicio.py` + e2e del front (148 verificaciones en total). No incluido: categorías de gasto,
+recurrentes, editar un gasto.
 - Backend: `Gasto` (concepto, monto, fecha). Resumen del mes: ventas, ganancia, gastos, "ya cubriste
   el X % de los gastos", productos para reponer, últimos movimientos.
 - Front: **Inicio** (la primera pantalla después del login) y registro rápido de gastos.
