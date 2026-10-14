@@ -109,7 +109,10 @@ Quedan para **M10** (necesitan la tienda pública): enlace para compartir, QR, "
 - Front: **Configurar mi tienda** (sin "Personalizar diseño" todavía, eso va con la Tienda pública).
 - Listo cuando: cambio el color y el WhatsApp y quedan guardados.
 
-### M4 · Catálogo — **L**
+### M4 · Catálogo — **L** ✅ (2026-10-14)
+Hecho con variantes opción A (`Color` + `Talla` opcionales). 34 pruebas unitarias + `scripts/e2e_productos.py`
+(Postgres) + e2e del front (56 verificaciones en total). Quedan para otros módulos: el stock "Quedan N" (M5),
+la insignia de Instagram (M11) y el proveedor del producto (M7).
 El corazón del producto.
 - Backend: `Producto` (nombre, descripción, categoría, precio, costo directo, stock mínimo, visible en
   tienda, archivado), `Variante`, `ProductoFoto` (orden, portada). Categorías ya existen.
@@ -226,7 +229,7 @@ Se puede hacer **sin Meta**: el parser es lógica pura.
 | 1 | ~~Librería de ruteo del front~~ | M1 | ✅ `react-router` |
 | 2 | ~~Librería de imágenes~~ | M2 | ✅ SkiaSharp (MIT) |
 | 2b | ~~Dónde guardar las fotos~~ | M2 | ✅ Postgres ahora; Cloudflare R2 al crecer (ver M2) |
-| 3 | Modelo de variantes | M4 | `Color` + `Talla` opcionales |
+| 3 | ~~Modelo de variantes~~ | M4 | ✅ `Color` + `Talla` opcionales (colores × tallas) |
 | 4 | Tienda pública: Razor Pages o React | M10 | Razor Pages (vista previa en WhatsApp) |
 | 5 | Requisitos actuales de Meta | M12 | Verificar antes de empezar |
 | 6 | Precios de los planes | M13 | Verificar competencia |

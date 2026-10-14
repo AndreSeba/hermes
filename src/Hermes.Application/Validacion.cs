@@ -37,6 +37,35 @@ public static class Validacion
         return password;
     }
 
+    // Dinero en Bs: hasta 2 decimales (se rechaza, no se redondea en silencio: 10,555 no es 10,56) y un
+    // tope para que un cero de más no pase. `permitirCero`: el costo puede ser 0 ("todavía no lo cargué").
+    public static decimal Monto(decimal valor, string campo, bool permitirCero)
+    {
+        if (valor != decimal.Round(valor, 2))
+            throw new ValidacionException($"{campo} puede tener hasta 2 decimales.");
+        if (valor < 0 || (!permitirCero && valor == 0))
+            throw new ValidacionException(permitirCero ? $"{campo} no puede ser negativo." : $"{campo} tiene que ser mayor a 0.");
+        if (valor > 1_000_000m)
+            throw new ValidacionException($"{campo} es demasiado alto.");
+        return valor;
+    }
+
+    // Lista de textos cortos ("café", "negro"): sin espacios sobrantes, sin vacíos y sin repetidos
+    // (sin distinguir mayúsculas: "Rojo" y "rojo" son lo mismo; queda la primera forma escrita).
+    public static List<string> ListaDeTextos(IReadOnlyList<string>? valores, int maximoLargo, string campo)
+    {
+        var resultado = new List<string>();
+        foreach (var crudo in valores ?? [])
+        {
+            var texto = (crudo ?? string.Empty).Trim();
+            if (texto.Length == 0) continue;
+            if (texto.Length > maximoLargo)
+                throw new ValidacionException($"Cada {campo} puede tener hasta {maximoLargo} caracteres.");
+            if (!resultado.Contains(texto, StringComparer.OrdinalIgnoreCase)) resultado.Add(texto);
+        }
+        return resultado;
+    }
+
     // Celular de Bolivia (8 dígitos, empieza con 6 o 7) con o sin +591, espacios, guiones o
     // paréntesis. Se guarda SIEMPRE como "+591" + 8 dígitos: el enlace wa.me usa esos mismos dígitos.
     // Opcional: vacío = sin WhatsApp.

@@ -12,7 +12,18 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+// JSON de la API, igual para los controllers (MVC) y para el generador de OpenAPI (que lee las opciones
+// "http", otras): si solo se configura uno, el esquema que ve el front no coincide con lo que viaja.
+//  - Los enums van como texto ("Pierde", no 1) → el front los recibe como unión de strings.
+//  - Números estrictos: sin esto el esquema dice `number | string` en cada monto y cantidad, porque
+//    por defecto la API aceptaría "180" (texto) donde se espera 180.
+static void ConfigurarJson(System.Text.Json.JsonSerializerOptions o)
+{
+    o.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    o.NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.Strict;
+}
+builder.Services.ConfigureHttpJsonOptions(o => ConfigurarJson(o.SerializerOptions));
+builder.Services.AddControllers().AddJsonOptions(o => ConfigurarJson(o.JsonSerializerOptions));
 builder.Services.AddOpenApi();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ITiendaActual, TiendaActualDesdeToken>();

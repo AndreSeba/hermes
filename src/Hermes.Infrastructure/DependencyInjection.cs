@@ -32,6 +32,7 @@ public static class DependencyInjection
         services.AddScoped<IAlmacenArchivos, AlmacenEnBaseDeDatos>();
         services.AddScoped<IImagenService, ImagenService>();
 
+        services.AddScoped<IProductoService, ProductoService>();
         services.AddScoped<ITiendaService, TiendaService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ICategoriaService, CategoriaService>();

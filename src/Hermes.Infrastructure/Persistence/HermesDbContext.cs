@@ -20,6 +20,9 @@ public class HermesDbContext : DbContext
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<Tienda> Tiendas => Set<Tienda>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+    public DbSet<Producto> Productos => Set<Producto>();
+    public DbSet<Variante> Variantes => Set<Variante>();
+    public DbSet<ProductoFoto> ProductoFotos => Set<ProductoFoto>();
     public DbSet<Imagen> Imagenes => Set<Imagen>();
     public DbSet<Archivo> Archivos => Set<Archivo>();
     public DbSet<Categoria> Categorias => Set<Categoria>();

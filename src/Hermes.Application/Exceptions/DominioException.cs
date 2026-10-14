@@ -81,6 +81,22 @@ public class ImagenNoEncontradaException : DominioException
         : base($"No existe la imagen {id}.") { }
 }
 
+public class ProductoNoEncontradoException : DominioException
+{
+    public override int Status => 404;
+
+    public ProductoNoEncontradoException(Guid id)
+        : base($"No existe el producto {id}.") { }
+}
+
+public class ImagenEnUsoException : DominioException
+{
+    public override int Status => 409;
+
+    public ImagenEnUsoException()
+        : base("Esa foto ya se usa en otro lado. Subila de nuevo para usarla acá.") { }
+}
+
 public class CategoriaNoEncontradaException : DominioException
 {
     public override int Status => 404;
