@@ -89,6 +89,27 @@ public class TiendaService : ITiendaService
         return await ADtoAsync(tienda, ct);
     }
 
+    public async Task<ConfiguracionPublicaDto> ObtenerConfiguracionPublicaAsync(CancellationToken ct)
+    {
+        var tiendaId = TiendaIdDeLaSesion();
+        var t = await _db.Tiendas.AsNoTracking().FirstOrDefaultAsync(x => x.Id == tiendaId, ct) ?? throw new SesionInvalidaException();
+        return new ConfiguracionPublicaDto(t.Activa, t.MostrarPrecios, t.MostrarDisponibilidad, t.PedidosPorWhatsapp, t.Fondo);
+    }
+
+    public async Task<ConfiguracionPublicaDto> GuardarConfiguracionPublicaAsync(ConfiguracionPublicaDto dto, CancellationToken ct)
+    {
+        var tiendaId = TiendaIdDeLaSesion();
+        if (!Enum.IsDefined(dto.Fondo)) throw new ValidacionException("Elegí un fondo de la lista.");
+        var t = await _db.Tiendas.FirstOrDefaultAsync(x => x.Id == tiendaId, ct) ?? throw new SesionInvalidaException();
+        t.Activa = dto.Publicada;
+        t.MostrarPrecios = dto.MostrarPrecios;
+        t.MostrarDisponibilidad = dto.MostrarDisponibilidad;
+        t.PedidosPorWhatsapp = dto.PedidosPorWhatsapp;
+        t.Fondo = dto.Fondo;
+        await _db.SaveChangesAsync(ct);
+        return dto;
+    }
+
     private async Task<TiendaDto> ADtoAsync(Tienda t, CancellationToken ct)
     {
         ImagenDto? logo = null;

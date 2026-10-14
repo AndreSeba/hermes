@@ -15,6 +15,7 @@ public class TiendaConfiguration : IEntityTypeConfiguration<Tienda>
         builder.Property(t => t.Descripcion).HasMaxLength(500);
         builder.Property(t => t.Whatsapp).HasMaxLength(20);
         builder.Property(t => t.Color).HasMaxLength(7).IsRequired();
+        builder.Property(t => t.Fondo).HasConversion<string>().HasMaxLength(10);
 
         builder.HasOne(t => t.Dueno).WithMany(u => u.Tiendas)
             .HasForeignKey(t => t.DuenoId).OnDelete(DeleteBehavior.Restrict);

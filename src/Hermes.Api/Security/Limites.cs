@@ -14,6 +14,8 @@ public static class Limites
     // Renovación de sesión: la hace sola cada pestaña abierta (al cargar y cada ~14 min), no un
     // atacante adivinando; con el límite de Auth se agotaba con uso normal.
     public const string Renovacion = "renovacion";
+    // La tienda pública: la ven clientes de verdad, muchos tras la misma IP de la operadora (CGNAT): límite alto.
+    public const string Publico = "publico";
 
     public static IServiceCollection AddLimites(this IServiceCollection services)
         => services.AddRateLimiter(options =>
@@ -21,6 +23,7 @@ public static class Limites
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             options.AddPolicy(Auth, contexto => PorIp(contexto, 20));
             options.AddPolicy(Renovacion, contexto => PorIp(contexto, 120));
+            options.AddPolicy(Publico, contexto => PorIp(contexto, 240));
         });
 
     private static RateLimitPartition<string> PorIp(HttpContext contexto, int porMinuto)

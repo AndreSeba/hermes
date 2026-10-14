@@ -97,6 +97,8 @@ public static class Validacion
     [
         "api", "public", "admin", "app", "www", "hermes", "login", "registro", "ayuda",
         "soporte", "precios", "planes", "tienda", "tiendas", "static", "assets", "scalar", "openapi",
+        // Rutas de la tienda pública (Hermes.Public).
+        "error", "archivos", "css", "js", "og",
     ];
 
     // hermes.bo/{slug}: minúsculas, números y guiones; 2 a 40 caracteres; empieza con letra o número.

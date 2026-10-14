@@ -26,6 +26,17 @@ public class TiendaController : ControllerBase
     public async Task<ActionResult<TiendaDto>> Actualizar([FromBody] ActualizarTiendaDto dto, CancellationToken ct)
         => Ok(await _tiendaService.ActualizarAsync(dto, ct));
 
+    // "Qué ven tus clientes" y el fondo de la tienda pública.
+    [HttpGet("publica")]
+    public async Task<ActionResult<ConfiguracionPublicaDto>> ObtenerPublica(CancellationToken ct)
+        => Ok(await _tiendaService.ObtenerConfiguracionPublicaAsync(ct));
+
+    [HttpPut("publica")]
+    [ProducesResponseType(typeof(ConfiguracionPublicaDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ConfiguracionPublicaDto>> GuardarPublica([FromBody] ConfiguracionPublicaDto dto, CancellationToken ct)
+        => Ok(await _tiendaService.GuardarConfiguracionPublicaAsync(dto, ct));
+
     [HttpPut("direccion")]
     [ProducesResponseType(typeof(TiendaDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- El mismo id de secretos que la API: comparten la cadena de conexión de Postgres (no hay JWT acá: no hay login). -->
+    <UserSecretsId>133ba15a-2adf-478a-bec5-952a6e8cc4cb</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Hermes.Domain\Hermes.Domain.csproj" />
+    <ProjectReference Include="..\Hermes.Application\Hermes.Application.csproj" />
+    <ProjectReference Include="..\Hermes.Infrastructure\Hermes.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

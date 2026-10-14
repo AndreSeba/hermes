@@ -130,6 +130,15 @@ public class GastoYaAnuladoException : DominioException
         : base("Ese gasto ya estaba anulado.") { }
 }
 
+// Para el público no se distingue "no existe" de "está apagada" ni de "ese producto no se muestra": todo es 404.
+public class TiendaPublicaNoEncontradaException : DominioException
+{
+    public override int Status => 404;
+
+    public TiendaPublicaNoEncontradaException()
+        : base("No encontramos esta tienda.") { }
+}
+
 public class StockInsuficienteException : DominioException
 {
     public override int Status => 409;

@@ -1,0 +1,85 @@
+@page "/{slug}/p/{id:guid}"
+@model ProductoModel
+@{
+    var t = Model.Tienda;
+    var p = Model.Producto;
+}
+<header class="cabecera cabecera-chica">
+    <a class="volver" href="/@t.Slug" aria-label="Volver a @t.Nombre">←</a>
+    <a class="cabecera-nombre" href="/@t.Slug">@t.Nombre</a>
+</header>
+
+<main class="producto">
+    <section class="galeria" aria-label="Fotos">
+        @if (p.Fotos.Count > 0)
+        {
+            <img id="foto-principal" class="foto-principal" src="@Model.Urls.Foto(p.Fotos[0].Detalle)" alt="@p.Nombre" width="@p.Fotos[0].Ancho" height="@p.Fotos[0].Alto" />
+            @if (p.Fotos.Count > 1)
+            {
+                <ul class="miniaturas">
+                    @foreach (var f in p.Fotos)
+                    {
+                        <li><button type="button" data-foto="@Model.Urls.Foto(f.Detalle)" aria-label="Ver esta foto"><img src="@Model.Urls.Foto(f.Miniatura)" alt="" width="64" height="64" loading="lazy" /></button></li>
+                    }
+                </ul>
+            }
+        }
+        else
+        {
+            <div class="foto-principal sin-foto" aria-hidden="true"></div>
+        }
+    </section>
+
+    <section class="datos">
+        @if (p.Categoria is not null)
+        {
+            <span class="categoria">@p.Categoria</span>
+        }
+        <h1>@p.Nombre</h1>
+        @if (p.Precio is { } precio)
+        {
+            <p class="precio-grande">@Formato.Bs(precio)</p>
+        }
+        @if (p.Disponible == false)
+        {
+            <p class="aviso-agotado">Por ahora está agotado.</p>
+        }
+        @if (!string.IsNullOrWhiteSpace(p.Descripcion))
+        {
+            <p class="descripcion">@p.Descripcion</p>
+        }
+
+        <form class="pedido" id="pedido"
+              data-tienda="@t.Nombre" data-producto="@p.Nombre" data-precio="@(p.Precio?.ToString(System.Globalization.CultureInfo.InvariantCulture))"
+              data-direccion="@Model.DireccionDeProducto" data-wa="@t.Whatsapp">
+            @if (Model.ConVariantes)
+            {
+                <fieldset class="variantes">
+                    <legend>Elegí una opción</legend>
+                    @foreach (var v in p.Variantes)
+                    {
+                        var nombre = Formato.Variante(v.Color, v.Talla);
+                        <label class="@(v.Disponible == false ? "variante agotada" : "variante")">
+                            <input type="radio" name="variante" value="@v.Id" data-nombre="@nombre"
+                                   checked="@(v.Id == Model.VarianteInicial?.Id)" disabled="@(v.Disponible == false)" />
+                            <span>@(nombre.Length > 0 ? nombre : "Único")@(v.Disponible == false ? " · agotado" : "")</span>
+                        </label>
+                    }
+                </fieldset>
+            }
+
+            @if (Model.PuedePedir)
+            {
+                <div class="cantidad" role="group" aria-label="Cantidad">
+                    <button type="button" id="menos" aria-label="Una menos">−</button>
+                    <output id="cantidad" aria-live="polite">1</output>
+                    <button type="button" id="mas" aria-label="Una más">+</button>
+                </div>
+                <a id="pedir" class="boton boton-wa boton-grande" href="@Model.EnlacePedido" target="_blank" rel="noopener noreferrer">Pedir por WhatsApp</a>
+                <p class="nota">Se abre WhatsApp con tu pedido ya escrito: lo mandás y te respondemos.</p>
+            }
+        </form>
+    </section>
+</main>
+
+<script src="/js/publico.js" defer></script>

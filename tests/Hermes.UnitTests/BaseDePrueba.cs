@@ -38,6 +38,16 @@ public sealed class BaseDePrueba : IDisposable
         return new HermesDbContext(opciones, new TiendaFija(tiendaId));
     }
 
+    // Para la tienda pública: la "tienda actual" la fija el servicio a partir del slug (TiendaPublicaContexto).
+    public HermesDbContext ContextoPublico(ITiendaActual tiendaActual)
+    {
+        var opciones = new DbContextOptionsBuilder<HermesDbContext>()
+            .UseSqlite(_conexion)
+            .UseSnakeCaseNamingConvention()
+            .Options;
+        return new HermesDbContext(opciones, tiendaActual);
+    }
+
     public void Dispose() => _conexion.Dispose();
 
     public sealed record TiendaFija(Guid? TiendaId) : ITiendaActual;

@@ -1,0 +1,91 @@
+@page "/{slug}"
+@model TiendaModel
+@{
+    var t = Model.Tienda;
+    var hayFiltro = !string.IsNullOrWhiteSpace(Model.Q) || Model.Categoria is not null;
+}
+<header class="cabecera">
+    @if (t.Logo is not null)
+    {
+        <img class="logo" src="@Model.Urls.Foto(t.Logo.Miniatura)" alt="" width="64" height="64" />
+    }
+    else
+    {
+        <span class="logo logo-iniciales" aria-hidden="true">@t.Nombre.Substring(0, Math.Min(2, t.Nombre.Length)).ToUpperInvariant()</span>
+    }
+    <div class="cabecera-texto">
+        <h1>@t.Nombre</h1>
+        @if (!string.IsNullOrWhiteSpace(t.Descripcion))
+        {
+            <p class="descripcion">@t.Descripcion</p>
+        }
+    </div>
+</header>
+
+<main class="contenido">
+    <form method="get" class="busqueda" role="search">
+        <label class="sr-only" for="q">Buscar producto</label>
+        <input id="q" name="q" type="search" value="@Model.Q" placeholder="Buscar producto" autocomplete="off" />
+        @if (Model.Categoria is { } cat)
+        {
+            <input type="hidden" name="categoria" value="@cat" />
+        }
+        <button type="submit">Buscar</button>
+    </form>
+
+    @if (t.Categorias.Count > 0)
+    {
+        <nav class="chips" aria-label="Categorías">
+            <a href="/@t.Slug@(string.IsNullOrWhiteSpace(Model.Q) ? "" : "?q=" + Uri.EscapeDataString(Model.Q!))" class="chip" aria-current="@(Model.Categoria is null ? "true" : null)">Todo</a>
+            @foreach (var c in t.Categorias)
+            {
+                <a href="/@t.Slug?categoria=@c.Id@(string.IsNullOrWhiteSpace(Model.Q) ? "" : "&q=" + Uri.EscapeDataString(Model.Q!))" class="chip" aria-current="@(Model.Categoria == c.Id ? "true" : null)">@c.Nombre</a>
+            }
+        </nav>
+    }
+
+    @if (Model.Pagina.Items.Count == 0)
+    {
+        <p class="vacio">@(hayFiltro ? "No encontramos productos con ese filtro." : "Todavía no hay productos para mostrar.")</p>
+    }
+    else
+    {
+        <ul class="grilla">
+            @foreach (var p in Model.Pagina.Items)
+            {
+                <li class="@(p.Disponible == false ? "tarjeta agotado" : "tarjeta")">
+                    <a href="/@t.Slug/p/@p.Id">
+                        <span class="foto">
+                            @if (p.Portada is not null)
+                            {
+                                <img src="@Model.Urls.Foto(p.Portada.Catalogo)" alt="@p.Nombre" loading="lazy" width="@p.Portada.Ancho" height="@p.Portada.Alto" />
+                            }
+                            @if (p.Disponible == false)
+                            {
+                                <span class="etiqueta">Agotado</span>
+                            }
+                        </span>
+                        <span class="nombre">@p.Nombre</span>
+                        @if (p.Precio is { } precio)
+                        {
+                            <span class="precio">@Formato.Bs(precio)</span>
+                        }
+                    </a>
+                </li>
+            }
+        </ul>
+        @if (Model.Pagina.Siguiente is { } siguiente)
+        {
+            <p class="mas">
+                <a class="boton" href="/@t.Slug?cursor=@Uri.EscapeDataString(siguiente)@(Model.Categoria is { } c2 ? "&categoria=" + c2 : "")@(string.IsNullOrWhiteSpace(Model.Q) ? "" : "&q=" + Uri.EscapeDataString(Model.Q!))">Ver más productos</a>
+            </p>
+        }
+    }
+</main>
+
+@if (t.Whatsapp is { } wa)
+{
+    <footer class="pie">
+        <a class="boton boton-wa" href="@Formato.EnlaceWhatsapp(wa, $"Hola {t.Nombre}! Vi tu tienda y quería hacerte una consulta.")" target="_blank" rel="noopener noreferrer">Escribinos por WhatsApp</a>
+    </footer>
+}

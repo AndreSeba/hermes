@@ -194,7 +194,12 @@ recurrentes, editar un gasto.
 
 ## Fase 3 — Hacia afuera
 
-### M10 · Tienda pública — **L**
+### M10 · Tienda pública — **L** ✅ (2026-10-14)
+Hecho con la opción recomendada: **Razor Pages en `Hermes.Public`** (puerto 5014). Lo que ve el cliente se configura desde
+Mi tienda (precios, disponibilidad, pedidos por WhatsApp, fondo, publicar/despublicar). 20 pruebas unitarias +
+`scripts/e2e_publico.py` + `Hermes.Web/scripts/publico.mjs` + e2e del panel (161 verificaciones en total).
+**Falta verificar con WhatsApp real** que la vista previa se vea (las etiquetas y la imagen JPEG sí están verificadas).
+No incluido: código QR, redirección de direcciones viejas, carrito, vista previa embebida en el panel.
 - Backend: rutas **`/public/{slug}/...` sin login**, con DTOs propios que **nunca** incluyen costo,
   margen ni stock exacto (solo disponible/agotado). Caché y límite por IP.
 - Página pública renderizada en el servidor (proyecto `Hermes.Public`, Razor Pages) para que el

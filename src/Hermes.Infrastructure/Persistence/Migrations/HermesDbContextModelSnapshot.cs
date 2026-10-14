@@ -687,15 +687,33 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("dueno_id");
 
+                    b.Property<string>("Fondo")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("fondo");
+
                     b.Property<Guid?>("LogoImagenId")
                         .HasColumnType("uuid")
                         .HasColumnName("logo_imagen_id");
+
+                    b.Property<bool>("MostrarDisponibilidad")
+                        .HasColumnType("boolean")
+                        .HasColumnName("mostrar_disponibilidad");
+
+                    b.Property<bool>("MostrarPrecios")
+                        .HasColumnType("boolean")
+                        .HasColumnName("mostrar_precios");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)")
                         .HasColumnName("nombre");
+
+                    b.Property<bool>("PedidosPorWhatsapp")
+                        .HasColumnType("boolean")
+                        .HasColumnName("pedidos_por_whatsapp");
 
                     b.Property<string>("Slug")
                         .IsRequired()

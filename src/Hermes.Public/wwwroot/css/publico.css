@@ -1,0 +1,118 @@
+/* La tienda pública. Los colores salen de la tienda (variables que pone _Layout.cshtml): --marca, --sobre-marca,
+   --fondo, --superficie, --texto, --suave, --borde. */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+h1, h2 { font-family: 'Bricolage Grotesque', 'DM Sans', system-ui, sans-serif; line-height: 1.15; margin: 0; }
+a { color: inherit; }
+img { max-width: 100%; height: auto; display: block; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Cabecera de la tienda */
+.cabecera {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 16px;
+  background: var(--marca);
+  color: var(--sobre-marca);
+}
+.cabecera h1 { font-size: 26px; }
+.cabecera .descripcion { margin: 4px 0 0; opacity: 0.9; white-space: pre-line; font-size: 15px; }
+.logo { width: 64px; height: 64px; border-radius: 16px; object-fit: cover; flex-shrink: 0; background: rgba(255, 255, 255, 0.25); }
+.logo-iniciales { display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 22px; }
+.cabecera-texto { min-width: 0; }
+.cabecera-chica { padding: 12px 16px; gap: 10px; }
+.cabecera-nombre { font-weight: 700; text-decoration: none; }
+.volver { text-decoration: none; font-size: 22px; padding: 4px 8px; }
+
+.contenido, .producto { max-width: 1100px; margin: 0 auto; padding: 16px; }
+
+/* Búsqueda y categorías */
+.busqueda { display: flex; gap: 8px; margin-bottom: 12px; }
+.busqueda input {
+  flex: 1; min-width: 0; height: 46px; padding: 0 14px; font: inherit; font-size: 16px;
+  border: 1px solid var(--borde); border-radius: 12px; background: var(--superficie); color: var(--texto);
+}
+.busqueda button, .boton {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 0 18px;
+  border: 0; border-radius: 12px; background: var(--marca); color: var(--sobre-marca);
+  font: inherit; font-weight: 700; text-decoration: none; cursor: pointer;
+}
+.boton-wa { background: #1fa855; color: #fff; }
+.boton-grande { width: 100%; min-height: 54px; font-size: 17px; }
+.chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 8px; scrollbar-width: none; }
+.chip {
+  flex-shrink: 0; padding: 8px 14px; border: 1px solid var(--borde); border-radius: 999px; background: var(--superficie);
+  text-decoration: none; font-size: 14px; font-weight: 500;
+}
+.chip[aria-current='true'] { background: var(--texto); border-color: var(--texto); color: var(--fondo); }
+
+/* Lista de productos */
+.grilla { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.tarjeta a { display: flex; flex-direction: column; gap: 6px; text-decoration: none; }
+.foto { position: relative; aspect-ratio: 1; border-radius: 16px; overflow: hidden; background: var(--superficie); border: 1px solid var(--borde); }
+.foto img { width: 100%; height: 100%; object-fit: cover; }
+.etiqueta {
+  position: absolute; left: 8px; bottom: 8px; padding: 3px 9px; border-radius: 8px;
+  background: rgba(23, 24, 28, 0.82); color: #fff; font-size: 12px; font-weight: 700;
+}
+.agotado .foto img { opacity: 0.55; }
+.nombre { font-weight: 500; font-size: 15px; overflow-wrap: anywhere; }
+.precio { font-weight: 700; }
+.mas { text-align: center; margin: 20px 0 8px; }
+.vacio { color: var(--suave); text-align: center; padding: 32px 0; }
+
+/* Pie con el contacto */
+.pie { position: sticky; bottom: 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: var(--fondo); border-top: 1px solid var(--borde); }
+.pie .boton { width: 100%; max-width: 520px; margin: 0 auto; display: flex; }
+
+/* Producto */
+.producto { display: grid; gap: 20px; }
+.foto-principal { width: 100%; max-height: 70vh; object-fit: contain; border-radius: 16px; background: var(--superficie); border: 1px solid var(--borde); }
+.sin-foto { aspect-ratio: 1; }
+.miniaturas { list-style: none; display: flex; gap: 8px; padding: 0; margin: 10px 0 0; overflow-x: auto; }
+.miniaturas button { padding: 0; border: 1px solid var(--borde); border-radius: 10px; overflow: hidden; background: none; cursor: pointer; }
+.miniaturas img { width: 64px; height: 64px; object-fit: cover; }
+.datos { display: flex; flex-direction: column; gap: 10px; }
+.datos h1 { font-size: 28px; }
+.categoria { color: var(--suave); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.precio-grande { font-size: 26px; font-weight: 700; margin: 0; }
+.descripcion { white-space: pre-line; margin: 0; }
+.aviso-agotado { margin: 0; padding: 10px 14px; border-radius: 12px; background: var(--superficie); border: 1px solid var(--borde); font-weight: 700; }
+.pedido { display: flex; flex-direction: column; gap: 14px; margin-top: 6px; }
+.variantes { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.variantes legend { font-weight: 700; margin-bottom: 8px; padding: 0; }
+.variante input { position: absolute; opacity: 0; pointer-events: none; }
+.variante span { display: inline-block; padding: 10px 16px; border: 1px solid var(--borde); border-radius: 12px; background: var(--superficie); cursor: pointer; }
+.variante input:checked + span { border-color: var(--marca); box-shadow: 0 0 0 2px var(--marca); font-weight: 700; }
+.variante input:focus-visible + span { outline: 3px solid var(--marca); outline-offset: 2px; }
+.variante.agotada span { opacity: 0.45; cursor: not-allowed; text-decoration: line-through; }
+.cantidad { display: inline-flex; align-items: center; align-self: flex-start; border: 1px solid var(--borde); border-radius: 12px; background: var(--superficie); }
+.cantidad button { width: 48px; height: 48px; border: 0; background: none; font-size: 22px; font-weight: 700; color: var(--texto); cursor: pointer; }
+.cantidad output { min-width: 40px; text-align: center; font-weight: 700; font-size: 18px; }
+.nota { margin: 0; color: var(--suave); font-size: 14px; text-align: center; }
+
+.error { max-width: 520px; margin: 18vh auto 0; padding: 16px; text-align: center; }
+.error p { color: var(--suave); }
+
+@media (min-width: 700px) {
+  .grilla { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .cabecera { padding: 28px max(16px, calc((100vw - 1100px) / 2)); }
+}
+@media (min-width: 900px) {
+  .grilla { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .producto { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 32px; align-items: start; }
+}

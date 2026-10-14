@@ -1,0 +1,9 @@
+@page "/Error"
+@model ErrorModel
+@{
+    ViewData["Titulo"] = Model.Codigo == 404 ? "No encontramos esta página" : "Algo salió mal";
+}
+<main class="error">
+    <h1>@(Model.Codigo == 404 ? "No encontramos esta página" : Model.Codigo == 429 ? "Demasiadas visitas juntas" : "Algo salió mal")</h1>
+    <p>@(Model.Codigo == 404 ? "Puede que la dirección esté mal escrita o que la tienda ya no esté disponible." : Model.Codigo == 429 ? "Esperá un minuto y probá de nuevo." : "Probá de nuevo en un rato.")</p>
+</main>

@@ -8,4 +8,6 @@ public interface ITiendaService
     Task<TiendaDto> ObtenerAsync(CancellationToken ct);
     Task<TiendaDto> ActualizarAsync(ActualizarTiendaDto dto, CancellationToken ct);
     Task<TiendaDto> CambiarDireccionAsync(CambiarDireccionDto dto, CancellationToken ct);
+    Task<ConfiguracionPublicaDto> ObtenerConfiguracionPublicaAsync(CancellationToken ct);
+    Task<ConfiguracionPublicaDto> GuardarConfiguracionPublicaAsync(ConfiguracionPublicaDto dto, CancellationToken ct);
 }
