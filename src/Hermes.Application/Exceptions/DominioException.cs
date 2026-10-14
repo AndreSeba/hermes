@@ -66,6 +66,21 @@ public class SlugNoDisponibleException : DominioException
         : base($"La dirección '{slug}' ya está en uso. Probá con otra.") { }
 }
 
+public class ImagenInvalidaException : DominioException
+{
+    public override int Status => 400;
+
+    public ImagenInvalidaException(string message) : base(message) { }
+}
+
+public class ImagenNoEncontradaException : DominioException
+{
+    public override int Status => 404;
+
+    public ImagenNoEncontradaException(Guid id)
+        : base($"No existe la imagen {id}.") { }
+}
+
 public class CategoriaNoEncontradaException : DominioException
 {
     public override int Status => 404;

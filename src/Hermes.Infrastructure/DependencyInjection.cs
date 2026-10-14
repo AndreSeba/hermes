@@ -1,4 +1,5 @@
 using Hermes.Application.Interfaces;
+using Hermes.Infrastructure.Imagenes;
 using Hermes.Infrastructure.Persistence;
 using Hermes.Infrastructure.Security;
 using Hermes.Infrastructure.Services;
@@ -25,6 +26,11 @@ public static class DependencyInjection
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.AddSingleton<JwtTokenService>();
         services.AddSingleton<BloqueoDeLogin>();
+
+        // Para pasar las fotos a Cloudflare R2 (docs/PLAN.md, M2/M14): otra implementación de
+        // IAlmacenArchivos acá. Ningún servicio cambia.
+        services.AddScoped<IAlmacenArchivos, AlmacenEnBaseDeDatos>();
+        services.AddScoped<IImagenService, ImagenService>();
 
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ICategoriaService, CategoriaService>();

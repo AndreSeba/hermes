@@ -23,6 +23,38 @@ namespace Hermes.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Hermes.Domain.Entities.Archivo", b =>
+                {
+                    b.Property<string>("Clave")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("clave");
+
+                    b.Property<int>("Bytes")
+                        .HasColumnType("integer")
+                        .HasColumnName("bytes");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("content_type");
+
+                    b.Property<DateTimeOffset>("CreadoEn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("creado_en");
+
+                    b.Property<byte[]>("Datos")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("datos");
+
+                    b.HasKey("Clave")
+                        .HasName("pk_archivos");
+
+                    b.ToTable("archivos", "hermes");
+                });
+
             modelBuilder.Entity("Hermes.Domain.Entities.Categoria", b =>
                 {
                     b.Property<Guid>("Id")
@@ -53,6 +85,42 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .HasFilter("activa");
 
                     b.ToTable("categorias", "hermes");
+                });
+
+            modelBuilder.Entity("Hermes.Domain.Entities.Imagen", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("AltoOriginal")
+                        .HasColumnType("integer")
+                        .HasColumnName("alto_original");
+
+                    b.Property<int>("AnchoOriginal")
+                        .HasColumnType("integer")
+                        .HasColumnName("ancho_original");
+
+                    b.Property<int>("BytesGuardados")
+                        .HasColumnType("integer")
+                        .HasColumnName("bytes_guardados");
+
+                    b.Property<DateTimeOffset>("CreadaEn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("creada_en");
+
+                    b.Property<Guid>("TiendaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tienda_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_imagenes");
+
+                    b.HasIndex("TiendaId")
+                        .HasDatabaseName("ix_imagenes_tienda_id");
+
+                    b.ToTable("imagenes", "hermes");
                 });
 
             modelBuilder.Entity("Hermes.Domain.Entities.RefreshToken", b =>
@@ -228,6 +296,16 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_categorias_tiendas_tienda_id");
+                });
+
+            modelBuilder.Entity("Hermes.Domain.Entities.Imagen", b =>
+                {
+                    b.HasOne("Hermes.Domain.Entities.Tienda", null)
+                        .WithMany()
+                        .HasForeignKey("TiendaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_imagenes_tiendas_tienda_id");
                 });
 
             modelBuilder.Entity("Hermes.Domain.Entities.RefreshToken", b =>

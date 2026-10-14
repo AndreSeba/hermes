@@ -56,7 +56,10 @@ Para que todo lo demás tenga dónde vivir.
 - **Decisión**: librería de ruteo (recomendado: `react-router`, una sola dependencia conocida).
 - Listo cuando: me registro desde el celular, recargo la página y sigo adentro, cierro sesión y no puedo volver atrás.
 
-### M2 · Imágenes — **M**
+### M2 · Imágenes — **M** ✅ (2026-10-14)
+Hecho: SkiaSharp, 3 tamaños WEBP, almacén en Postgres. 23 pruebas unitarias + 31 verificaciones contra
+la API real (`scripts/e2e_imagenes.py`). Solo backend: el componente de subida del front se construye
+donde se usa por primera vez (M3 el logo, M4 las fotos de producto), así no queda código sin usar.
 Infraestructura que usan Catálogo, Mi tienda e Instagram.
 - Backend: interfaz `IAlmacenArchivos`; los servicios nunca saben dónde se guardan los archivos.
   **Implementación actual: en la base de datos** (ver "Dónde se guardan las fotos" abajo).
@@ -85,9 +88,11 @@ propio para las fotos y su CDN. Opciones evaluadas (precios a confirmar al momen
 | DigitalOcean Spaces | — | US$5/mes (250 GB) | 1 TB incluido | alternativa |
 | AWS S3 | — | ~US$0,023/GB-mes | ~US$0,09/GB: **caro** | ❌ |
 
-Tamaño estimado: ~0,5 MB por foto (3 tamaños WEBP), ~1,5 MB por producto con 3 fotos, ~75 MB por
-tienda de 50 productos; **1.000 tiendas ≈ 75 GB ≈ US$1/mes en R2**. En una tienda pública lo que
-más pesa son las descargas, por eso R2 (descarga gratis).
+Tamaño: **medido** con una foto sintética de 12 MP (1,2 MB) → miniatura 3 KB + catálogo 20 KB +
+detalle 70 KB ≈ **93 KB por foto**. Una foto real con más detalle pesará más; como cota prudente,
+~300 KB por foto, ~1 MB por producto con 3 fotos, ~50 MB por tienda de 50 productos;
+**1.000 tiendas ≈ 50 GB ≈ US$0,75/mes en R2**. (La estimación inicial de 0,5 MB por foto era
+exagerada.) En una tienda pública lo que más pesa son las descargas, por eso R2 (descarga gratis).
 
 **Cómo será la migración**: cada archivo ya tiene una **clave** con forma de ruta
 (`{tienda}/imagenes/{id}/{tamaño}.webp`), igual a la que tendrá en el bucket. Migrar = copiar las

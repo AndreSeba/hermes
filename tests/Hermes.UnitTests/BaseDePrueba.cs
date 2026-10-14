@@ -40,5 +40,5 @@ public sealed class BaseDePrueba : IDisposable
 
     public void Dispose() => _conexion.Dispose();
 
-    private sealed record TiendaFija(Guid? TiendaId) : ITiendaActual;
+    public sealed record TiendaFija(Guid? TiendaId) : ITiendaActual;
 }
