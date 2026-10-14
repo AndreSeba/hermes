@@ -206,6 +206,10 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("dueno_id");
 
+                    b.Property<Guid?>("LogoImagenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("logo_imagen_id");
+
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasMaxLength(120)
@@ -228,6 +232,9 @@ namespace Hermes.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("DuenoId")
                         .HasDatabaseName("ix_tiendas_dueno_id");
+
+                    b.HasIndex("LogoImagenId")
+                        .HasDatabaseName("ix_tiendas_logo_imagen_id");
 
                     b.HasIndex("Slug")
                         .IsUnique()
@@ -335,6 +342,12 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_tiendas_usuarios_dueno_id");
+
+                    b.HasOne("Hermes.Domain.Entities.Imagen", null)
+                        .WithMany()
+                        .HasForeignKey("LogoImagenId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_tiendas_imagenes_logo_imagen_id");
 
                     b.Navigation("Dueno");
                 });

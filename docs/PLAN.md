@@ -99,7 +99,11 @@ exagerada.) En una tienda pública lo que más pesa son las descargas, por eso R
 filas al bucket con la misma clave + cambiar la implementación de `IAlmacenArchivos` por configuración.
 Ningún servicio ni pantalla cambia.
 
-### M3 · Mi tienda — **S**
+### M3 · Mi tienda — **S** ✅ (2026-10-14)
+Hecho: datos, color (5 del prototipo + otro), WhatsApp de Bolivia, logo (primer uso de la subida de fotos),
+dirección con advertencia, todo con prueba de aislamiento. 29 pruebas unitarias + e2e del front (35 verificaciones).
+Quedan para **M10** (necesitan la tienda pública): enlace para compartir, QR, "Ver tienda", los interruptores de
+"Qué ven tus clientes" y "Personalizar diseño".
 - Backend: ver/editar datos de la tienda (nombre, descripción, WhatsApp, color, logo); el slug se
   valida igual que en el registro y solo se cambia con confirmación (rompe enlaces compartidos).
 - Front: **Configurar mi tienda** (sin "Personalizar diseño" todavía, eso va con la Tienda pública).

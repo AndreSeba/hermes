@@ -19,6 +19,11 @@ public class TiendaConfiguration : IEntityTypeConfiguration<Tienda>
         builder.HasOne(t => t.Dueno).WithMany(u => u.Tiendas)
             .HasForeignKey(t => t.DuenoId).OnDelete(DeleteBehavior.Restrict);
 
+        // Referencia circular a propósito (imagenes.tienda_id ↔ tiendas.logo_imagen_id): ambas
+        // anulables/insertables en orden. Borrar la imagen del logo deja el logo en null, no falla.
+        builder.HasOne<Imagen>().WithMany()
+            .HasForeignKey(t => t.LogoImagenId).OnDelete(DeleteBehavior.SetNull);
+
         // El formato del slug (^[a-z0-9][a-z0-9-]{1,38}$) y del color lo valida el servicio:
         // un CHECK con regex (~) es propio de Postgres y rompe las pruebas sobre SQLite.
     }

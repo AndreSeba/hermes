@@ -37,6 +37,32 @@ public static class Validacion
         return password;
     }
 
+    // Celular de Bolivia (8 dígitos, empieza con 6 o 7) con o sin +591, espacios, guiones o
+    // paréntesis. Se guarda SIEMPRE como "+591" + 8 dígitos: el enlace wa.me usa esos mismos dígitos.
+    // Opcional: vacío = sin WhatsApp.
+    public static string? Whatsapp(string? valor)
+    {
+        var texto = valor?.Trim();
+        if (string.IsNullOrEmpty(texto)) return null;
+        if (texto.Any(c => !char.IsDigit(c) && !" +-().".Contains(c)))
+            throw new ValidacionException("El WhatsApp solo puede tener números.");
+
+        var digitos = new string(texto.Where(char.IsDigit).ToArray());
+        if (digitos.StartsWith("591") && digitos.Length == 11) digitos = digitos[3..];
+        if (!System.Text.RegularExpressions.Regex.IsMatch(digitos, "^[67][0-9]{7}$"))
+            throw new ValidacionException("Ingresá tu celular de Bolivia: 8 dígitos que empiecen con 6 o 7.");
+        return "+591" + digitos;
+    }
+
+    // "#RRGGBB", guardado en mayúsculas.
+    public static string ColorHex(string? valor)
+    {
+        var color = (valor ?? string.Empty).Trim();
+        if (!System.Text.RegularExpressions.Regex.IsMatch(color, "^#[0-9A-Fa-f]{6}$"))
+            throw new ValidacionException("El color no es válido.");
+        return color.ToUpperInvariant();
+    }
+
     // Rutas propias de la app que no pueden ser la dirección de una tienda.
     private static readonly HashSet<string> SlugsReservados =
     [

@@ -45,7 +45,7 @@ public class ImagenService : IImagenService
 
         // Imagen y archivos se guardan juntos o no se guarda nada.
         await _db.SaveChangesAsync(ct);
-        return ADto(tiendaId, imagen);
+        return ImagenMapeo.ADto(_almacen, tiendaId, imagen);
     }
 
     public async Task BorrarAsync(Guid id, CancellationToken ct)
@@ -58,11 +58,4 @@ public class ImagenService : IImagenService
         _db.Imagenes.Remove(imagen);
         await _db.SaveChangesAsync(ct);
     }
-
-    // Para que Catálogo, Mi tienda, etc. armen el DTO de una imagen que ya tienen cargada.
-    public ImagenDto ADto(Guid tiendaId, Imagen i) => new(
-        i.Id, i.AnchoOriginal, i.AltoOriginal,
-        _almacen.Url(Imagen.ClaveDe(tiendaId, i.Id, TamanoImagen.Miniatura)),
-        _almacen.Url(Imagen.ClaveDe(tiendaId, i.Id, TamanoImagen.Catalogo)),
-        _almacen.Url(Imagen.ClaveDe(tiendaId, i.Id, TamanoImagen.Detalle)));
 }
