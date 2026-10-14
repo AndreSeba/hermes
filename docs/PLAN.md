@@ -44,7 +44,10 @@ Tamaños: **S** = una sesión corta, **M** = una sesión, **L** = dos o más ses
 
 ## Fase 1 — Núcleo usable
 
-### M1 · Sesión y armazón del front — **M**
+### M1 · Sesión y armazón del front — **M** ✅ (2026-10-14)
+Hecho con `react-router`. e2e de 17 verificaciones (`pnpm e2e` en Hermes.Web). De paso se corrigió en
+el backend la carrera de dos pestañas renovando a la vez y se separó el límite por IP del refresh.
+
 Para que todo lo demás tenga dónde vivir.
 - Front: ruteo, pantallas **Bienvenida, Registro, Iniciar sesión**; renovación automática del
   token (al cargar la app y al recibir 401, con reintento del pedido); cerrar sesión.
@@ -180,7 +183,7 @@ Se puede hacer **sin Meta**: el parser es lógica pura.
 
 | # | Decisión | Se necesita en | Recomendación |
 |---|---|---|---|
-| 1 | Librería de ruteo del front | M1 | `react-router` |
+| 1 | ~~Librería de ruteo del front~~ | M1 | ✅ `react-router` |
 | 2 | Librería de imágenes | M2 | SkiaSharp (MIT) |
 | 3 | Modelo de variantes | M4 | `Color` + `Talla` opcionales |
 | 4 | Tienda pública: Razor Pages o React | M10 | Razor Pages (vista previa en WhatsApp) |

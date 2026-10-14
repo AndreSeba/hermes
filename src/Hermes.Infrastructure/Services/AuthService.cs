@@ -15,6 +15,7 @@ namespace Hermes.Infrastructure.Services;
 public class AuthService : IAuthService
 {
     private const int CostoBCrypt = 12;
+    public static readonly TimeSpan MargenRenovacionSimultanea = TimeSpan.FromSeconds(30);
 
     // Hash de una contraseña que nadie conoce: si el email no existe se verifica contra este,
     // así la respuesta tarda lo mismo y no revela qué cuentas existen.
@@ -107,6 +108,11 @@ public class AuthService : IAuthService
 
         if (actual.RevocadoEn is not null)
         {
+            // Rotado hace instantes: casi seguro dos pestañas renovando a la vez (comparten la cookie).
+            // Se rechaza sin castigo; la pestaña que perdió reintenta con la cookie nueva.
+            if (actual.ReemplazadoPorId is not null && ahora - actual.RevocadoEn.Value < MargenRenovacionSimultanea)
+                throw new SesionInvalidaException();
+
             // Un token ya usado vuelve a aparecer: lo tiene alguien más. Se cierran todas las sesiones.
             await _db.RefreshTokens.Where(r => r.UsuarioId == actual.UsuarioId && r.RevocadoEn == null)
                 .ExecuteUpdateAsync(s => s.SetProperty(r => r.RevocadoEn, ahora), ct);

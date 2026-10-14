@@ -116,10 +116,26 @@ public class AuthTests : IDisposable
     }
 
     [Fact]
+    public async Task Dos_pestanas_renovando_a_la_vez_no_cierran_la_sesion()
+    {
+        var registro = await ConServicio(s => s.RegistrarAsync(Registro, default));
+        var pestanaA = await ConServicio(s => s.RenovarAsync(registro.RefreshToken, default));
+
+        // La pestaña B llega 2 s después con la cookie vieja: se rechaza…
+        _reloj.Advance(TimeSpan.FromSeconds(2));
+        await Assert.ThrowsAsync<SesionInvalidaException>(() => ConServicio(s => s.RenovarAsync(registro.RefreshToken, default)));
+
+        // …pero sin castigo: la cookie nueva (que B reintenta) sigue sirviendo.
+        var reintentoB = await ConServicio(s => s.RenovarAsync(pestanaA.RefreshToken, default));
+        Assert.NotNull(reintentoB.Sesion.AccessToken);
+    }
+
+    [Fact]
     public async Task Reusar_un_refresh_token_ya_usado_cierra_todas_las_sesiones()
     {
         var registro = await ConServicio(s => s.RegistrarAsync(Registro, default));
         var renovada = await ConServicio(s => s.RenovarAsync(registro.RefreshToken, default));
+        _reloj.Advance(AuthService.MargenRenovacionSimultanea + TimeSpan.FromSeconds(1));
 
         // Alguien presenta el token viejo (robado): se rechaza…
         await Assert.ThrowsAsync<SesionInvalidaException>(() => ConServicio(s => s.RenovarAsync(registro.RefreshToken, default)));

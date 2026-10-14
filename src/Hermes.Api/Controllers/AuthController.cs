@@ -39,22 +39,13 @@ public class AuthController : ControllerBase
     // Sin cuerpo: el refresh token sale de la cookie. El front lo llama al cargar la app y
     // cuando el token de acceso vence (401).
     [HttpPost("refresh")]
-    [EnableRateLimiting(Limites.Auth)]
+    [EnableRateLimiting(Limites.Renovacion)]
     [ProducesResponseType(typeof(SesionDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    // Si falla, la cookie NO se borra: con dos pestañas renovando a la vez, la que pierde borraría
+    // la cookie nueva y válida que acaba de dejar la otra (el navegador comparte la cookie).
     public async Task<ActionResult<SesionDto>> Renovar(CancellationToken ct)
-    {
-        try
-        {
-            return Ok(ConCookie(await _authService.RenovarAsync(Request.Cookies[CookieRefresh] ?? string.Empty, ct)));
-        }
-        catch
-        {
-            // Una cookie que ya no sirve se borra para que el navegador no la siga mandando.
-            BorrarCookie();
-            throw;
-        }
-    }
+        => Ok(ConCookie(await _authService.RenovarAsync(Request.Cookies[CookieRefresh] ?? string.Empty, ct)));
 
     [HttpPost("logout")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
