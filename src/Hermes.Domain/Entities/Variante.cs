@@ -21,4 +21,6 @@ public class Variante : IPerteneceATienda
     // El orden en que la dueña las escribió ("S, M, L" no puede salir "L, S, M"). NO se ordena por Id:
     // los Guid v7 creados en el mismo milisegundo salen en cualquier orden.
     public int Orden { get; set; }
+
+    public List<MovimientoStock> Movimientos { get; set; } = [];
 }

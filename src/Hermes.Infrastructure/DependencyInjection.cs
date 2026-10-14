@@ -2,6 +2,7 @@ using Hermes.Application.Interfaces;
 using Hermes.Infrastructure.Imagenes;
 using Hermes.Infrastructure.Persistence;
 using Hermes.Infrastructure.Security;
+using Hermes.Infrastructure.Stock;
 using Hermes.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -32,6 +33,8 @@ public static class DependencyInjection
         services.AddScoped<IAlmacenArchivos, AlmacenEnBaseDeDatos>();
         services.AddScoped<IImagenService, ImagenService>();
 
+        services.AddScoped<IOperacionesStock, OperacionesStock>();
+        services.AddScoped<IStockService, StockService>();
         services.AddScoped<IProductoService, ProductoService>();
         services.AddScoped<ITiendaService, TiendaService>();
         services.AddScoped<IAuthService, AuthService>();

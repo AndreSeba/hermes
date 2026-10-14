@@ -28,6 +28,7 @@ public class ProductoConfiguration : IEntityTypeConfiguration<Producto>
         {
             t.HasCheckConstraint("ck_producto_precio", "precio > 0");
             t.HasCheckConstraint("ck_producto_costo", "costo >= 0");
+            t.HasCheckConstraint("ck_producto_stock_minimo", "stock_minimo >= 0");
         });
     }
 }

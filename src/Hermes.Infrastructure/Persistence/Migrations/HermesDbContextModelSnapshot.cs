@@ -123,6 +123,66 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                     b.ToTable("imagenes", "hermes");
                 });
 
+            modelBuilder.Entity("Hermes.Domain.Entities.MovimientoStock", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Cantidad")
+                        .HasColumnType("integer")
+                        .HasColumnName("cantidad");
+
+                    b.Property<decimal?>("CostoUnitario")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("costo_unitario");
+
+                    b.Property<DateTimeOffset>("CreadoEn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("creado_en");
+
+                    b.Property<string>("Nota")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("nota");
+
+                    b.Property<int>("Saldo")
+                        .HasColumnType("integer")
+                        .HasColumnName("saldo");
+
+                    b.Property<Guid>("TiendaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tienda_id");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("tipo");
+
+                    b.Property<Guid>("VarianteId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("variante_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_movimientos");
+
+                    b.HasIndex("TiendaId")
+                        .HasDatabaseName("ix_movimientos_tienda_id");
+
+                    b.HasIndex("VarianteId", "Id")
+                        .HasDatabaseName("ix_movimientos_variante_id_id");
+
+                    b.ToTable("movimientos", "hermes", t =>
+                        {
+                            t.HasCheckConstraint("ck_movimiento_cantidad", "cantidad <> 0");
+
+                            t.HasCheckConstraint("ck_movimiento_saldo", "saldo >= 0");
+                        });
+                });
+
             modelBuilder.Entity("Hermes.Domain.Entities.Producto", b =>
                 {
                     b.Property<Guid>("Id")
@@ -141,6 +201,10 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("CategoriaId")
                         .HasColumnType("uuid")
                         .HasColumnName("categoria_id");
+
+                    b.Property<bool>("ControlaStock")
+                        .HasColumnType("boolean")
+                        .HasColumnName("controla_stock");
 
                     b.Property<decimal>("Costo")
                         .HasPrecision(12, 2)
@@ -167,6 +231,10 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .HasColumnType("numeric(12,2)")
                         .HasColumnName("precio");
 
+                    b.Property<int>("StockMinimo")
+                        .HasColumnType("integer")
+                        .HasColumnName("stock_minimo");
+
                     b.Property<Guid>("TiendaId")
                         .HasColumnType("uuid")
                         .HasColumnName("tienda_id");
@@ -189,6 +257,8 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("ck_producto_costo", "costo >= 0");
 
                             t.HasCheckConstraint("ck_producto_precio", "precio > 0");
+
+                            t.HasCheckConstraint("ck_producto_stock_minimo", "stock_minimo >= 0");
                         });
                 });
 
@@ -471,6 +541,25 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_imagenes_tiendas_tienda_id");
                 });
 
+            modelBuilder.Entity("Hermes.Domain.Entities.MovimientoStock", b =>
+                {
+                    b.HasOne("Hermes.Domain.Entities.Tienda", null)
+                        .WithMany()
+                        .HasForeignKey("TiendaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_movimientos_tiendas_tienda_id");
+
+                    b.HasOne("Hermes.Domain.Entities.Variante", "Variante")
+                        .WithMany("Movimientos")
+                        .HasForeignKey("VarianteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_movimientos_variantes_variante_id");
+
+                    b.Navigation("Variante");
+                });
+
             modelBuilder.Entity("Hermes.Domain.Entities.Producto", b =>
                 {
                     b.HasOne("Hermes.Domain.Entities.Categoria", "Categoria")
@@ -581,6 +670,11 @@ namespace Hermes.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Hermes.Domain.Entities.Usuario", b =>
                 {
                     b.Navigation("Tiendas");
+                });
+
+            modelBuilder.Entity("Hermes.Domain.Entities.Variante", b =>
+                {
+                    b.Navigation("Movimientos");
                 });
 #pragma warning restore 612, 618
         }

@@ -129,7 +129,11 @@ El corazón del producto.
 
 ## Fase 2 — Operación diaria
 
-### M5 · Stock — **M**
+### M5 · Stock — **M** ✅ (2026-10-14)
+Hecho, con una decisión del usuario: **el control de stock es por producto** (encendido por defecto; apagado =
+"por encargo"). 37 pruebas unitarias + la de concurrencia con Postgres real (12 ventas simultáneas de las últimas
+5 unidades: pasan 5; sin el candado pasaban 7) + `scripts/e2e_stock.py` + e2e del front (77 verificaciones en
+total). Queda para M7 el proveedor en "Llegaron más" y para M9 las alertas de Inicio.
 - Backend: `MovimientoStock` (ingreso, ajuste, venta, devolución) por variante. **El stock se calcula
   sumando movimientos, nunca se guarda en una columna** (regla de CMP: evita stocks desincronizados).
   - **Candado por variante** antes de leer y descontar (como `BloquearProductoAsync` en CMP): sin eso,

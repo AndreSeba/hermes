@@ -6,6 +6,7 @@ using Hermes.Domain;
 using Hermes.Domain.Entities;
 using Hermes.Infrastructure.Imagenes;
 using Hermes.Infrastructure.Persistence;
+using Hermes.Infrastructure.Stock;
 using Microsoft.EntityFrameworkCore;
 
 namespace Hermes.Infrastructure.Services;
@@ -64,7 +65,7 @@ public class ProductoService : IProductoService
                 p.Id, p.Nombre, p.Precio, p.Costo, p.CategoriaId,
                 Categoria = p.Categoria != null ? p.Categoria.Nombre : null,
                 PortadaId = p.Fotos.OrderBy(f => f.Orden).Select(f => (Guid?)f.ImagenId).FirstOrDefault(),
-                p.VisibleEnTienda, p.Archivado,
+                p.VisibleEnTienda, p.Archivado, p.ControlaStock, p.StockMinimo,
                 Variantes = p.Variantes.Count(v => v.Activa),
             })
             .ToListAsync(ct);
@@ -74,13 +75,19 @@ public class ProductoService : IProductoService
 
         var portadaIds = filas.Where(f => f.PortadaId != null).Select(f => f.PortadaId!.Value).ToList();
         var portadas = await _db.Imagenes.AsNoTracking().Where(i => portadaIds.Contains(i.Id)).ToDictionaryAsync(i => i.Id, ct);
+        var stocks = await _db.PorProductoAsync(filas.Where(f => f.ControlaStock).Select(f => f.Id).ToList(), ct);
 
-        var items = filas.Select(f => new ProductoResumenDto(
-            f.Id, f.Nombre, f.Precio, f.Costo,
-            MargenProducto.Ganancia(f.Precio, f.Costo), MargenProducto.Estado(f.Precio, f.Costo),
-            f.CategoriaId, f.Categoria,
-            f.PortadaId is { } id && portadas.TryGetValue(id, out var imagen) ? ImagenMapeo.ADto(_almacen, tiendaId, imagen) : null,
-            f.VisibleEnTienda, f.Archivado, f.Variantes)).ToList();
+        var items = filas.Select(f =>
+        {
+            var total = stocks.GetValueOrDefault(f.Id);
+            return new ProductoResumenDto(
+                f.Id, f.Nombre, f.Precio, f.Costo,
+                MargenProducto.Ganancia(f.Precio, f.Costo), MargenProducto.Estado(f.Precio, f.Costo),
+                f.CategoriaId, f.Categoria,
+                f.PortadaId is { } id && portadas.TryGetValue(id, out var imagen) ? ImagenMapeo.ADto(_almacen, tiendaId, imagen) : null,
+                f.VisibleEnTienda, f.Archivado, f.Variantes,
+                f.ControlaStock ? total : null, ReglaStock.Estado(f.ControlaStock, total, f.StockMinimo));
+        }).ToList();
 
         return new PaginaDeProductosDto(items, hayMas ? items[^1].Id : null);
     }
@@ -125,7 +132,9 @@ public class ProductoService : IProductoService
 
         Aplicar(producto, datos);
         producto.ActualizadoEn = _reloj.GetUtcNow();
+        var activasAntes = producto.Variantes.Where(v => v.Activa).ToList();
         ReconciliarVariantes(producto, datos.Variantes);
+        await ExigirSinStockEnLasQueSeSacanAsync(producto, activasAntes, ct);
         var fotosQuitadas = ReconciliarFotos(producto, datos.FotoIds);
 
         await _db.SaveChangesAsync(ct);
@@ -155,7 +164,28 @@ public class ProductoService : IProductoService
 
     private record DatosValidados(
         string Nombre, string? Descripcion, decimal Precio, decimal Costo, Guid? CategoriaId, bool Visible,
-        List<(string Color, string Talla)> Variantes, List<Guid> FotoIds);
+        List<(string Color, string Talla)> Variantes, List<Guid> FotoIds, bool ControlaStock, int StockMinimo);
+
+    // Sacar una variante la desactiva, y el stock de una variante inactiva deja de contar: si todavía
+    // quedan unidades, esas unidades "desaparecerían" del total sin dejar rastro. Se pide corregirlo a 0
+    // antes (queda en el historial). Solo aplica si el producto lleva control de stock.
+    private async Task ExigirSinStockEnLasQueSeSacanAsync(Producto producto, List<Variante> activasAntes, CancellationToken ct)
+    {
+        if (!producto.ControlaStock) return;
+        var sacadas = activasAntes.Where(v => !v.Activa).ToList();
+        if (sacadas.Count == 0) return;
+
+        var stocks = await _db.PorVarianteAsync(sacadas.Select(v => v.Id).ToList(), ct);
+        var conStock = sacadas.FirstOrDefault(v => stocks.GetValueOrDefault(v.Id) > 0);
+        if (conStock is null) return;
+
+        // El contexto ya tiene los cambios a medias: se descartan para que nada se guarde por error.
+        var etiqueta = string.Join(" · ", new[] { conStock.Color, conStock.Talla }.Where(s => s.Length > 0));
+        var cantidad = stocks[conStock.Id];
+        _db.ChangeTracker.Clear();
+        throw new ValidacionException(
+            $"Todavía quedan {cantidad} de {(etiqueta.Length == 0 ? "Único" : etiqueta)}. Corregí el stock a 0 antes de sacarlo.");
+    }
 
     private async Task<DatosValidados> ValidarAsync(GuardarProductoDto dto, Guid tiendaId, Guid? productoId, CancellationToken ct)
     {
@@ -179,7 +209,11 @@ public class ProductoService : IProductoService
             throw new ValidacionException("Hay una foto repetida.");
         await ValidarFotosAsync(fotos, tiendaId, productoId, ct);
 
-        return new DatosValidados(nombre, descripcion, precio, costo, dto.CategoriaId, dto.VisibleEnTienda, variantes, fotos);
+        if (dto.StockMinimo is < 0 or > 100_000)
+            throw new ValidacionException("El mínimo para avisar tiene que estar entre 0 y 100.000.");
+
+        return new DatosValidados(nombre, descripcion, precio, costo, dto.CategoriaId, dto.VisibleEnTienda, variantes, fotos,
+            dto.ControlaStock, dto.StockMinimo);
     }
 
     private async Task ValidarFotosAsync(List<Guid> fotos, Guid tiendaId, Guid? productoId, CancellationToken ct)
@@ -224,6 +258,8 @@ public class ProductoService : IProductoService
         p.Costo = d.Costo;
         p.CategoriaId = d.CategoriaId;
         p.VisibleEnTienda = d.Visible;
+        p.ControlaStock = d.ControlaStock;
+        p.StockMinimo = d.StockMinimo;
     }
 
     // Las variantes NUNCA se borran (en M5 tendrán stock): las que ya no están se desactivan y, si la
@@ -290,6 +326,6 @@ public class ProductoService : IProductoService
         return new ProductoDto(
             p.Id, p.Nombre, p.Descripcion, p.Precio, p.Costo,
             MargenProducto.Ganancia(p.Precio, p.Costo), MargenProducto.Estado(p.Precio, p.Costo),
-            p.CategoriaId, p.VisibleEnTienda, p.Archivado, variantes, fotos);
+            p.CategoriaId, p.VisibleEnTienda, p.Archivado, variantes, fotos, p.ControlaStock, p.StockMinimo);
     }
 }

@@ -22,6 +22,13 @@ public class Producto : IPerteneceATienda
     public Guid? CategoriaId { get; set; }
     public Categoria? Categoria { get; set; }
 
+    // ¿Se cuentan las unidades de este producto? Apagado = "por encargo": piezas únicas, hecho a pedido,
+    // servicios. No tiene stock, nunca figura agotado y vender no descuenta nada. El stock sigue siendo
+    // una suma de movimientos; esto solo decide si el producto participa. Apagarlo no borra su historial.
+    public bool ControlaStock { get; set; } = true;
+    // "Por agotarse" cuando quedan estas o menos.
+    public int StockMinimo { get; set; } = ReglaStock.MinimoPorDefecto;
+
     // Oculto de la tienda pública pero sigue en el catálogo (M10 lo usa).
     public bool VisibleEnTienda { get; set; } = true;
     public bool Archivado { get; set; }

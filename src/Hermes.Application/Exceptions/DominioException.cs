@@ -66,6 +66,30 @@ public class SlugNoDisponibleException : DominioException
         : base($"La dirección '{slug}' ya está en uso. Probá con otra.") { }
 }
 
+public class StockInsuficienteException : DominioException
+{
+    public override int Status => 409;
+
+    public StockInsuficienteException(string producto, int disponible, int pedido)
+        : base($"No alcanza el stock de {producto}: hay {disponible} y se necesitan {pedido}.") { }
+}
+
+public class ProductoSinControlDeStockException : DominioException
+{
+    public override int Status => 409;
+
+    public ProductoSinControlDeStockException(string producto)
+        : base($"{producto} no lleva control de stock. Activalo en el producto para contar las unidades.") { }
+}
+
+public class VarianteNoEncontradaException : DominioException
+{
+    public override int Status => 404;
+
+    public VarianteNoEncontradaException(Guid id)
+        : base($"No existe la variante {id}.") { }
+}
+
 public class ImagenInvalidaException : DominioException
 {
     public override int Status => 400;
