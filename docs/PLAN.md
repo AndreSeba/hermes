@@ -58,13 +58,41 @@ Para que todo lo demás tenga dónde vivir.
 
 ### M2 · Imágenes — **M**
 Infraestructura que usan Catálogo, Mi tienda e Instagram.
-- Backend: interfaz `IAlmacenArchivos` con implementación en **disco local** (desarrollo) y luego
-  **Cloudflare R2** (producción) sin tocar los servicios.
-- Subida validando el tipo por los **primeros bytes** (JPG/PNG/WEBP), tope de tamaño, redimensionado
-  a 2–3 tamaños (miniatura, catálogo, detalle) y conversión a WEBP.
-- **Decisión**: librería de imágenes (recomendado: **SkiaSharp**, licencia MIT; ImageSharp exige
-  licencia paga por encima de cierto facturación).
-- Listo cuando: subo una foto desde el celular y se ve en sus tres tamaños; un archivo falso con extensión `.jpg` se rechaza.
+- Backend: interfaz `IAlmacenArchivos`; los servicios nunca saben dónde se guardan los archivos.
+  **Implementación actual: en la base de datos** (ver "Dónde se guardan las fotos" abajo).
+- Procesamiento con **SkiaSharp** (decidido 2026-10-14): valida que sea una imagen real (JPG/PNG/WEBP),
+  tope de tamaño y de píxeles, corrige la orientación del celular, genera **3 tamaños** (miniatura
+  ~200 px, catálogo ~600 px, detalle ~1200 px) en **WEBP** y descarta los metadatos (GPS incluido).
+  **No se guarda la foto original.**
+- Listo cuando: subo una foto y se ve en sus tres tamaños; un archivo falso con extensión `.jpg` se rechaza.
+
+#### Dónde se guardan las fotos (decidido 2026-10-14)
+
+**Ahora: en PostgreSQL**, decisión del usuario: por el momento la plataforma la usa una sola
+persona y no vale la pena una cuenta en la nube. En una tabla propia (nunca dentro de `productos`,
+la lección de CMP: con la foto adentro cada listado arrastraba megas) y servidas por la API con
+caché larga.
+
+**Después (cuando haya más tiendas, a más tardar en M14): Cloudflare R2**, con un subdominio
+propio para las fotos y su CDN. Opciones evaluadas (precios a confirmar al momento de migrar):
+
+| Opción | Gratis | Después | Descarga (clientes viendo fotos) | Veredicto |
+|---|---|---|---|---|
+| Base de datos | — | crece con la base y sus respaldos | pasa por la API, sin CDN | ✅ ahora (un usuario) |
+| Disco del VPS | — | — | consume el ancho de banda del VPS | ❌ se pierde si se rompe el servidor |
+| **Cloudflare R2** | 10 GB | ~US$0,015/GB-mes | **gratis, sin límite** | ✅ **producción** |
+| Backblaze B2 | 10 GB | ~US$0,006/GB-mes | gratis hasta 3× lo guardado | alternativa |
+| DigitalOcean Spaces | — | US$5/mes (250 GB) | 1 TB incluido | alternativa |
+| AWS S3 | — | ~US$0,023/GB-mes | ~US$0,09/GB: **caro** | ❌ |
+
+Tamaño estimado: ~0,5 MB por foto (3 tamaños WEBP), ~1,5 MB por producto con 3 fotos, ~75 MB por
+tienda de 50 productos; **1.000 tiendas ≈ 75 GB ≈ US$1/mes en R2**. En una tienda pública lo que
+más pesa son las descargas, por eso R2 (descarga gratis).
+
+**Cómo será la migración**: cada archivo ya tiene una **clave** con forma de ruta
+(`{tienda}/imagenes/{id}/{tamaño}.webp`), igual a la que tendrá en el bucket. Migrar = copiar las
+filas al bucket con la misma clave + cambiar la implementación de `IAlmacenArchivos` por configuración.
+Ningún servicio ni pantalla cambia.
 
 ### M3 · Mi tienda — **S**
 - Backend: ver/editar datos de la tienda (nombre, descripción, WhatsApp, color, logo); el slug se
@@ -174,6 +202,9 @@ Se puede hacer **sin Meta**: el parser es lógica pura.
 - Hosting (decidir VPS vs. administrado), HTTPS, `ForwardedHeaders` detrás del proxy, secretos por
   variables de entorno, respaldos diarios de Postgres, Serilog + Sentry, limpieza de refresh tokens
   vencidos, Row Level Security como segunda barrera multi-tienda.
+- **Fotos a Cloudflare R2** si ya hay varias tiendas (ver "Dónde se guardan las fotos" en M2): crear
+  la cuenta y el bucket, implementación R2 de `IAlmacenArchivos`, copiar las filas con la misma clave.
+- SkiaSharp en Linux necesita el paquete `SkiaSharp.NativeAssets.Linux` (en Windows viene incluido).
 - Términos y política de privacidad. PWA (instalable en el celular).
 - Pruebas de carga con varios usuarios simultáneos (como se hizo en CMP).
 
@@ -184,7 +215,8 @@ Se puede hacer **sin Meta**: el parser es lógica pura.
 | # | Decisión | Se necesita en | Recomendación |
 |---|---|---|---|
 | 1 | ~~Librería de ruteo del front~~ | M1 | ✅ `react-router` |
-| 2 | Librería de imágenes | M2 | SkiaSharp (MIT) |
+| 2 | ~~Librería de imágenes~~ | M2 | ✅ SkiaSharp (MIT) |
+| 2b | ~~Dónde guardar las fotos~~ | M2 | ✅ Postgres ahora; Cloudflare R2 al crecer (ver M2) |
 | 3 | Modelo de variantes | M4 | `Color` + `Talla` opcionales |
 | 4 | Tienda pública: Razor Pages o React | M10 | Razor Pages (vista previa en WhatsApp) |
 | 5 | Requisitos actuales de Meta | M12 | Verificar antes de empezar |
