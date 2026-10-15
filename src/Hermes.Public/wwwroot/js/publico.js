@@ -105,7 +105,23 @@
       agregado.classList.toggle('agregado-error', !!error);
       agregado.textContent = '';
       if (error) { agregado.textContent = error; return; }
-      agregado.appendChild(document.createTextNode('✓ Agregado al carrito. '));
+      // Ícono de "listo" (SVG de línea, no un carácter especial).
+      var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', 'icono');
+      svg.setAttribute('width', '18');
+      svg.setAttribute('height', '18');
+      svg.setAttribute('viewBox', '0 0 24 24');
+      svg.setAttribute('fill', 'none');
+      svg.setAttribute('stroke', 'currentColor');
+      svg.setAttribute('stroke-width', '2.2');
+      svg.setAttribute('stroke-linecap', 'round');
+      svg.setAttribute('stroke-linejoin', 'round');
+      svg.setAttribute('aria-hidden', 'true');
+      var trazo = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      trazo.setAttribute('d', 'M20 6L9 17l-5-5');
+      svg.appendChild(trazo);
+      agregado.appendChild(svg);
+      agregado.appendChild(document.createTextNode(' Agregado al carrito. '));
       var a = document.createElement('a');
       a.href = '/' + d.slug + '/carrito';
       a.textContent = 'Ver carrito';

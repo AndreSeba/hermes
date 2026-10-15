@@ -1,9 +1,10 @@
 @model TiendaPublicaDto
 @* El enlace al carrito de la cabecera. Solo si la tienda recibe pedidos; publico.js lo muestra (sin JavaScript no hay
-   carrito) y le pone cuántas unidades hay. *@
+   carrito) y le pone cuántas unidades hay. El ícono es un SVG de línea (como los del panel), no un emoji. *@
 @if (Model.Whatsapp is not null)
 {
     <a class="ir-carrito" href="/@Model.Slug/carrito" data-carrito="@Model.Slug" hidden>
-        <span aria-hidden="true">🛒</span> Carrito <span class="contador" data-contador></span>
+        <svg class="icono" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12l1 12H5zM9 8V6a3 3 0 0 1 6 0v2" /></svg>
+        Carrito <span class="contador" data-contador></span>
     </a>
 }

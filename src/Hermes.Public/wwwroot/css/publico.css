@@ -111,6 +111,7 @@ img { max-width: 100%; height: auto; display: block; }
   border-radius: 999px; background: rgba(255, 255, 255, 0.22); color: inherit; text-decoration: none; font-weight: 700; font-size: 15px;
 }
 .ir-carrito[hidden] { display: none; }
+.icono { flex-shrink: 0; vertical-align: -3px; }
 .boton-secundario { background: var(--superficie); color: #1a7f45; border: 2px solid #1fa855; }
 .boton-claro { background: var(--superficie); color: var(--texto); border: 1px solid var(--borde); }
 .agregado { margin: 0; padding: 10px 14px; border-radius: 12px; background: var(--superficie); border: 1px solid var(--borde); font-weight: 700; }
