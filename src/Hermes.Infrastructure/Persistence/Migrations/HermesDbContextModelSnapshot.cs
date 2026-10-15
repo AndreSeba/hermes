@@ -546,6 +546,175 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Hermes.Domain.Entities.PagoPlan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("ComprobanteImagenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("comprobante_imagen_id");
+
+                    b.Property<DateTime>("CreadoEn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("creado_en");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)")
+                        .HasColumnName("estado");
+
+                    b.Property<int>("Meses")
+                        .HasColumnType("integer")
+                        .HasColumnName("meses");
+
+                    b.Property<string>("Metodo")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("metodo");
+
+                    b.Property<decimal>("Monto")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("monto");
+
+                    b.Property<string>("Motivo")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("motivo");
+
+                    b.Property<Guid>("PlanId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("plan_id");
+
+                    b.Property<DateTime?>("ResueltoEn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("resuelto_en");
+
+                    b.Property<Guid?>("ResueltoPorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("resuelto_por_id");
+
+                    b.Property<Guid>("TiendaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tienda_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_pagos_plan");
+
+                    b.HasIndex("ComprobanteImagenId")
+                        .HasDatabaseName("ix_pagos_plan_comprobante_imagen_id");
+
+                    b.HasIndex("PlanId")
+                        .HasDatabaseName("ix_pagos_plan_plan_id");
+
+                    b.HasIndex("TiendaId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_pago_plan_pendiente")
+                        .HasFilter("estado = 'Pendiente'");
+
+                    b.HasIndex("Estado", "Id")
+                        .HasDatabaseName("ix_pagos_plan_estado_id");
+
+                    b.ToTable("pagos_plan", "hermes", t =>
+                        {
+                            t.HasCheckConstraint("ck_pago_plan_meses", "meses > 0");
+
+                            t.HasCheckConstraint("ck_pago_plan_monto", "monto > 0");
+                        });
+                });
+
+            modelBuilder.Entity("Hermes.Domain.Entities.Plan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("boolean")
+                        .HasColumnName("activo");
+
+                    b.Property<string>("Codigo")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("codigo");
+
+                    b.Property<int?>("MaxAlmacenamientoMb")
+                        .HasColumnType("integer")
+                        .HasColumnName("max_almacenamiento_mb");
+
+                    b.Property<int?>("MaxProductos")
+                        .HasColumnType("integer")
+                        .HasColumnName("max_productos");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("nombre");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("integer")
+                        .HasColumnName("orden");
+
+                    b.Property<decimal>("PrecioMensual")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("precio_mensual");
+
+                    b.HasKey("Id")
+                        .HasName("pk_planes");
+
+                    b.HasIndex("Codigo")
+                        .IsUnique()
+                        .HasDatabaseName("ix_planes_codigo");
+
+                    b.ToTable("planes", "hermes", t =>
+                        {
+                            t.HasCheckConstraint("ck_plan_precio", "precio_mensual >= 0");
+                        });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("0194f000-0000-7000-8000-000000000001"),
+                            Activo = true,
+                            Codigo = "gratis",
+                            MaxAlmacenamientoMb = 100,
+                            MaxProductos = 15,
+                            Nombre = "Gratis",
+                            Orden = 1,
+                            PrecioMensual = 0m
+                        },
+                        new
+                        {
+                            Id = new Guid("0194f000-0000-7000-8000-000000000002"),
+                            Activo = true,
+                            Codigo = "emprendedor",
+                            MaxAlmacenamientoMb = 1000,
+                            MaxProductos = 150,
+                            Nombre = "Emprendedor",
+                            Orden = 2,
+                            PrecioMensual = 39m
+                        },
+                        new
+                        {
+                            Id = new Guid("0194f000-0000-7000-8000-000000000003"),
+                            Activo = true,
+                            Codigo = "negocio",
+                            MaxAlmacenamientoMb = 5000,
+                            Nombre = "Negocio",
+                            Orden = 3,
+                            PrecioMensual = 89m
+                        });
+                });
+
             modelBuilder.Entity("Hermes.Domain.Entities.Producto", b =>
                 {
                     b.Property<Guid>("Id")
@@ -758,6 +927,62 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                     b.ToTable("refresh_tokens", "hermes");
                 });
 
+            modelBuilder.Entity("Hermes.Domain.Entities.Suscripcion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid?>("AsignadaPorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("asignada_por_id");
+
+                    b.Property<DateTime>("CreadaEn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("creada_en");
+
+                    b.Property<DateTime>("Desde")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("desde");
+
+                    b.Property<DateTime?>("Hasta")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("hasta");
+
+                    b.Property<string>("Origen")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("origen");
+
+                    b.Property<Guid?>("PagoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("pago_id");
+
+                    b.Property<Guid>("PlanId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("plan_id");
+
+                    b.Property<Guid>("TiendaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tienda_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_suscripciones");
+
+                    b.HasIndex("PagoId")
+                        .HasDatabaseName("ix_suscripciones_pago_id");
+
+                    b.HasIndex("PlanId")
+                        .HasDatabaseName("ix_suscripciones_plan_id");
+
+                    b.HasIndex("TiendaId", "Desde")
+                        .HasDatabaseName("ix_suscripciones_tienda_id_desde");
+
+                    b.ToTable("suscripciones", "hermes");
+                });
+
             modelBuilder.Entity("Hermes.Domain.Entities.Tienda", b =>
                 {
                     b.Property<Guid>("Id")
@@ -863,6 +1088,10 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .HasMaxLength(254)
                         .HasColumnType("character varying(254)")
                         .HasColumnName("email");
+
+                    b.Property<bool>("EsAdministrador")
+                        .HasColumnType("boolean")
+                        .HasColumnName("es_administrador");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
@@ -1212,6 +1441,31 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                     b.Navigation("Variante");
                 });
 
+            modelBuilder.Entity("Hermes.Domain.Entities.PagoPlan", b =>
+                {
+                    b.HasOne("Hermes.Domain.Entities.Imagen", null)
+                        .WithMany()
+                        .HasForeignKey("ComprobanteImagenId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_pagos_plan_imagenes_comprobante_imagen_id");
+
+                    b.HasOne("Hermes.Domain.Entities.Plan", "Plan")
+                        .WithMany()
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_pagos_plan_planes_plan_id");
+
+                    b.HasOne("Hermes.Domain.Entities.Tienda", null)
+                        .WithMany()
+                        .HasForeignKey("TiendaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_pagos_plan_tiendas_tienda_id");
+
+                    b.Navigation("Plan");
+                });
+
             modelBuilder.Entity("Hermes.Domain.Entities.Producto", b =>
                 {
                     b.HasOne("Hermes.Domain.Entities.Categoria", "Categoria")
@@ -1283,6 +1537,31 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_refresh_tokens_usuarios_usuario_id");
 
                     b.Navigation("Usuario");
+                });
+
+            modelBuilder.Entity("Hermes.Domain.Entities.Suscripcion", b =>
+                {
+                    b.HasOne("Hermes.Domain.Entities.PagoPlan", null)
+                        .WithMany()
+                        .HasForeignKey("PagoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_suscripciones_pagos_plan_pago_id");
+
+                    b.HasOne("Hermes.Domain.Entities.Plan", "Plan")
+                        .WithMany()
+                        .HasForeignKey("PlanId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_suscripciones_planes_plan_id");
+
+                    b.HasOne("Hermes.Domain.Entities.Tienda", null)
+                        .WithMany()
+                        .HasForeignKey("TiendaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_suscripciones_tiendas_tienda_id");
+
+                    b.Navigation("Plan");
                 });
 
             modelBuilder.Entity("Hermes.Domain.Entities.Tienda", b =>

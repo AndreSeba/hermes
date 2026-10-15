@@ -36,6 +36,11 @@ public static class DependencyInjection
         services.AddScoped<IOperacionesStock, OperacionesStock>();
         services.AddScoped<IStockService, StockService>();
         services.AddScoped<IVentaService, VentaService>();
+        services.Configure<Planes.PlanesOptions>(configuration.GetSection(Planes.PlanesOptions.SectionName));
+        services.AddScoped<Planes.PlanesDeTienda>();
+        services.AddScoped<ILimitesDePlan, Planes.LimitesDePlan>();
+        services.AddScoped<IPlanService, Planes.PlanService>();
+        services.AddScoped<IAdminService, Planes.AdminService>();
         services.AddScoped<IInstagramService, InstagramService>();
         services.AddScoped<TiendaPublicaContexto>();
         services.AddScoped<IPublicoService, PublicoService>();

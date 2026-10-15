@@ -233,7 +233,12 @@ Se puede hacer **sin Meta**: el parser es lógica pura.
 
 ## Fase 4 — Negocio y producción
 
-### M13 · Planes y panel admin — **M**
+### M13 · Planes y panel admin — **M** ✅ (2026-10-14)
+Hecho. Gratis (15 productos, 100 MB), Emprendedor (Bs 39: 150 productos, 1000 MB) y Negocio (Bs 89: sin límite de
+productos, 5000 MB); **precios PROVISORIOS**, se cambian desde el panel sin tocar código. Límites en el backend (402), pedido
+de plan con comprobante, panel admin (pagos, tiendas, planes) y rol de administrador que se da solo por comando.
+27 pruebas (`PlanesTests`, 2 de concurrencia en Postgres) + `scripts/e2e_planes.py` + e2e del panel.
+No incluido: cobro automático, prorrateo, avisos de vencimiento, verificación de email.
 - Plan Gratis (hasta 15 productos), Emprendedor y Negocio; límites aplicados en el backend.
 - Cobro manual: el cliente sube el comprobante de QR/transferencia y se activa desde un **panel admin**
   (rol de plataforma, distinto del dueño de tienda).
@@ -261,7 +266,7 @@ Se puede hacer **sin Meta**: el parser es lógica pura.
 | 3 | ~~Modelo de variantes~~ | M4 | ✅ `Color` + `Talla` opcionales (colores × tallas) |
 | 4 | Tienda pública: Razor Pages o React | M10 | Razor Pages (vista previa en WhatsApp) |
 | 5 | Requisitos actuales de Meta | M12 | Verificar antes de empezar |
-| 6 | Precios de los planes | M13 | Verificar competencia |
+| 6 | Precios de los planes | M13 | Provisorios (Bs 0 / 39 / 89): verificar competencia y ajustar en el panel |
 | 7 | Hosting | M14 | VPS chico (US$5–10) al inicio |
 | 8 | **Nombre del producto** | antes de M10 (la tienda pública lo muestra) | — |
 

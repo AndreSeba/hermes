@@ -184,7 +184,7 @@ public class AuthService : IAuthService
         return new SesionEmitida(new SesionDto(accessToken, expira, UsuarioDto(usuario), TiendaDto(tienda)), refresh, refreshExpira);
     }
 
-    private static UsuarioSesionDto UsuarioDto(Usuario u) => new(u.Id, u.Nombre, u.Email);
+    private static UsuarioSesionDto UsuarioDto(Usuario u) => new(u.Id, u.Nombre, u.Email, u.EsAdministrador);
 
     private static TiendaSesionDto TiendaDto(Tienda t) => new(t.Id, t.Nombre, t.Slug);
 }

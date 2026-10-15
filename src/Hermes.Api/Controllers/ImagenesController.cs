@@ -22,7 +22,8 @@ public class ImagenesController : ControllerBase
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(ImagenDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<ImagenDto>> Subir(IFormFile archivo, CancellationToken ct)
+    // `comprobante=true`: es la foto de un comprobante de pago (no cuenta para el espacio de fotos del plan).
+    public async Task<ActionResult<ImagenDto>> Subir(IFormFile archivo, [FromQuery] bool comprobante, CancellationToken ct)
     {
         if (archivo.Length is 0 or > ProcesadorImagenes.MaximoBytes)
             throw new ImagenInvalidaException(archivo.Length == 0
@@ -33,7 +34,7 @@ public class ImagenesController : ControllerBase
         using var memoria = new MemoryStream((int)archivo.Length);
         await flujo.CopyToAsync(memoria, ct);
 
-        var creada = await _imagenService.SubirAsync(memoria.ToArray(), ct);
+        var creada = await _imagenService.SubirAsync(memoria.ToArray(), ct, comprobante);
         return CreatedAtAction(nameof(Subir), new { id = creada.Id }, creada);
     }
 

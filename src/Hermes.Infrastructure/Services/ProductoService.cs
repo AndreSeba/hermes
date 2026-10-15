@@ -25,8 +25,13 @@ public class ProductoService : IProductoService
     private readonly ITiendaActual _sesion;
     private readonly TimeProvider _reloj;
 
-    public ProductoService(HermesDbContext db, IImagenService imagenes, IAlmacenArchivos almacen, ITiendaActual sesion, TimeProvider reloj)
+    // `limites` opcional: sin él no hay límite de plan (las pruebas que no son de planes lo omiten).
+    private readonly ILimitesDePlan? _limites;
+
+    public ProductoService(HermesDbContext db, IImagenService imagenes, IAlmacenArchivos almacen, ITiendaActual sesion, TimeProvider reloj,
+        ILimitesDePlan? limites = null)
     {
+        _limites = limites;
         _db = db;
         _imagenes = imagenes;
         _almacen = almacen;
@@ -108,6 +113,8 @@ public class ProductoService : IProductoService
     {
         var tiendaId = TiendaIdDeLaSesion();
         var datos = await ValidarAsync(dto, tiendaId, productoId: null, ct);
+        // El límite de productos del plan (402 si ya llegó). Después de validar: un dato mal escrito se dice primero.
+        if (_limites is not null) await _limites.ExigirPoderCrearProductoAsync(ct);
 
         var ahora = _reloj.GetUtcNow();
         var producto = new Producto { CreadoEn = ahora, ActualizadoEn = ahora };
@@ -157,6 +164,8 @@ public class ProductoService : IProductoService
             ?? throw new ProductoNoEncontradoException(id);
         if (producto.Archivado != archivar)
         {
+            // Desarchivar vuelve a contar para el límite del plan: no es una forma de saltárselo.
+            if (!archivar && _limites is not null) await _limites.ExigirPoderCrearProductoAsync(ct);
             producto.Archivado = archivar;
             producto.ActualizadoEn = _reloj.GetUtcNow();
             await _db.SaveChangesAsync(ct);

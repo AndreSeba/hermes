@@ -155,6 +155,54 @@ public class BorradorYaResueltoException : DominioException
         : base("Ese producto ya se publicó o se descartó.") { }
 }
 
+// 402 Payment Required: el plan de la tienda no permite esto (límite de productos o de espacio de fotos).
+public class LimiteDePlanException : DominioException
+{
+    public override int Status => 402;
+
+    public LimiteDePlanException(string message) : base(message) { }
+}
+
+public class PlanNoEncontradoException : DominioException
+{
+    public override int Status => 404;
+
+    public PlanNoEncontradoException(Guid id)
+        : base($"No existe el plan {id}.") { }
+}
+
+public class PagoNoEncontradoException : DominioException
+{
+    public override int Status => 404;
+
+    public PagoNoEncontradoException(Guid id)
+        : base($"No existe el pago {id}.") { }
+}
+
+public class PagoYaResueltoException : DominioException
+{
+    public override int Status => 409;
+
+    public PagoYaResueltoException()
+        : base("Ese pago ya se aprobó o se rechazó.") { }
+}
+
+public class PagoPendienteExistenteException : DominioException
+{
+    public override int Status => 409;
+
+    public PagoPendienteExistenteException()
+        : base("Ya tenés un pago esperando que lo revisemos. Cuando lo resolvamos podés pedir otro.") { }
+}
+
+public class TiendaNoEncontradaException : DominioException
+{
+    public override int Status => 404;
+
+    public TiendaNoEncontradaException(Guid id)
+        : base($"No existe la tienda {id}.") { }
+}
+
 public class StockInsuficienteException : DominioException
 {
     public override int Status => 409;

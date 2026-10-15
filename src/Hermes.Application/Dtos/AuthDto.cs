@@ -5,7 +5,8 @@ public record RegistroDto(string Nombre, string Email, string Password, string N
 
 public record LoginDto(string Email, string Password);
 
-public record UsuarioSesionDto(Guid Id, string Nombre, string Email);
+// EsAdmin: administrador de la plataforma (el front muestra su panel; la API lo exige igual con el token).
+public record UsuarioSesionDto(Guid Id, string Nombre, string Email, bool EsAdmin = false);
 
 public record TiendaSesionDto(Guid Id, string Nombre, string Slug);
 

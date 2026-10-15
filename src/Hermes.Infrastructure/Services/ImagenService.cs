@@ -16,20 +16,29 @@ public class ImagenService : IImagenService
     private readonly ITiendaActual _tienda;
     private readonly TimeProvider _reloj;
 
-    public ImagenService(HermesDbContext db, IAlmacenArchivos almacen, ITiendaActual tienda, TimeProvider reloj)
+    // `limites` opcional: sin él no hay límite de espacio (las pruebas que no son de planes lo omiten).
+    private readonly ILimitesDePlan? _limites;
+
+    public ImagenService(HermesDbContext db, IAlmacenArchivos almacen, ITiendaActual tienda, TimeProvider reloj, ILimitesDePlan? limites = null)
     {
+        _limites = limites;
         _db = db;
         _almacen = almacen;
         _tienda = tienda;
         _reloj = reloj;
     }
 
-    public async Task<ImagenDto> SubirAsync(byte[] contenido, CancellationToken ct)
+    public async Task<ImagenDto> SubirAsync(byte[] contenido, CancellationToken ct, bool esComprobante = false)
     {
         var tiendaId = _tienda.TiendaId ?? throw new SinTiendaEnSesionException();
 
         // Decodificar y achicar cuesta CPU: se hace antes de tocar la base.
         var procesada = await Task.Run(() => ProcesadorImagenes.Procesar(contenido), ct);
+
+        // El espacio de fotos del plan. El comprobante de un pago NO cuenta: si no, una tienda con el espacio lleno no podría
+        // subir el comprobante para pasar a un plan que le dé más (se quedaría trabada).
+        if (!esComprobante && _limites is not null)
+            await _limites.ExigirAlmacenamientoAsync(procesada.Tamanos.Values.Sum(b => (long)b.Length), ct);
 
         var imagen = new Imagen
         {

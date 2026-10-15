@@ -9,6 +9,9 @@ public class Usuario
     public string? Telefono { get; set; }
     public string PasswordHash { get; set; } = string.Empty;
     public bool Activo { get; set; } = true;
+    // Administrador de la PLATAFORMA (aprueba pagos, asigna planes): distinto de ser dueña de una tienda. Se asigna SOLO
+    // desde el servidor (`dotnet run --project src/Hermes.Api -- promover-admin <email>`), nunca desde la web.
+    public bool EsAdministrador { get; set; }
     public DateTimeOffset CreadoEn { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? UltimoLoginEn { get; set; }
 

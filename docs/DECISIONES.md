@@ -1,7 +1,7 @@
 # Decisiones tomadas sin consultar
 
 Registro de lo que se decidió por criterio propio mientras se construía (sin que el usuario lo pidiera de forma
-explícita). Cubre M0 a M11 (las de M6–M11 van primero; las de M0–M5 están en "Módulos anteriores"). Cada módulo nuevo
+explícita). Cubre M0 a M11 y M13 (las de M6–M13 van primero; las de M0–M5 están en "Módulos anteriores"). Cada módulo nuevo
 agrega acá las suyas. Cada una dice **por qué** y **cómo se cambia**. Las marcadas con ⚠️ son las que más conviene revisar
 porque cambian lo que ve o paga la dueña, o son difíciles de revertir.
 
@@ -77,6 +77,25 @@ producto (encendido por defecto) y "venta rápida" con cliente opcional.
 | 50 | Detuve y reinicié el proceso de la API en tu PC varias veces para compilar (solo el proceso de la API). |
 | 51 | Creé cuentas de prueba y datos de prueba en `hermes_dev` con cada corrida de los scripts e2e (se acumulan; es la base de desarrollo). |
 | 52 | Las capturas de pantalla de `docs/capturas/` se regeneran en cada e2e y se commitean. |
+
+## Planes y panel admin (M13)
+
+| # | Decisión | Por qué / cómo cambiarla |
+|---|---|---|
+| 129 ⚠️ | **Precios provisorios**: Gratis Bs 0 (15 productos, 100 MB de fotos), Emprendedor **Bs 39**/mes (150 productos, 1000 MB), Negocio **Bs 89**/mes (sin límite de productos, 5000 MB). | No verifiqué la competencia (lo pedía el plan). Se cambian desde Administración → Planes, sin tocar código; el cambio rige al instante para todas las tiendas. |
+| 130 | **Se cobra por mes, con 1, 3, 6 o 12 meses**, sin descuento por pagar más meses. | Lo más simple. Los meses salen de la configuración (`Planes:MesesPermitidos`). |
+| 131 | **Cobro manual**: la dueña paga por QR o transferencia, sube la foto del comprobante y un administrador lo aprueba o rechaza (con motivo que ella ve). | Lo pedía el plan. El texto de "cómo pagar" es configurable (`Planes:InstruccionesDePago`): **hay que poner los datos reales de la cuenta/QR**. |
+| 132 | **Un solo pedido esperando por tienda** (409 si pide otro). | Evita dos comprobantes del mismo pago. Índice único parcial en la base. |
+| 133 | **El monto queda fijado al pedir**: si después cambia el precio del plan, ese pedido no cambia. | Es lo que ella vio y pagó. |
+| 134 | **Pagar el mismo plan antes de que venza alarga la fecha** desde donde termina (no pierde días). Cambiar a otro plan cierra el actual **hoy, sin devolver la diferencia** (sin prorrateo). | Prorratear es complicado de explicar; si hace falta se compensa a mano con una asignación. |
+| 135 ⚠️ | **Al vencer, nada se borra ni se oculta**: vuelve al Gratis, conserva todos sus productos y fotos, pero no puede crear productos nuevos (ni desarchivar) por encima de 15 ni subir fotos por encima de 100 MB. | Borrar o esconder productos de una clienta que se atrasó un día sería muy agresivo. La tienda pública sigue mostrando todo. |
+| 136 | **El límite responde 402** con un mensaje que manda a "Mi plan" (el front agrega el enlace solo). | |
+| 137 | **El comprobante no cuenta en el espacio de fotos.** | Si no, una tienda llena no podría subir el comprobante para pagar más espacio. |
+| 138 | **El rol de administrador solo se da por comando en el servidor** (`dotnet run --project src/Hermes.Api -- promover-admin <email>`), nunca desde la web. | Sin verificación de email, dar admin por email sería una puerta abierta. El token lleva el rol; hay que volver a entrar después de promover. |
+| 139 | **El administrador puede asignar cualquier plan, con o sin vencimiento** (cortesías, pruebas, compensaciones). Queda registrado quién lo hizo. | |
+| 140 | **El plan Gratis siempre es gratis y está activo**; un plan pago no puede quedar en Bs 0. Desactivar un plan solo deja de ofrecerlo: quien lo tiene lo conserva. | Evita dejar a todos sin plan base. |
+| 141 | **En desarrollo, una tienda sin plan tiene el Negocio** (`Planes:PlanSinSuscripcion = negocio` en `appsettings.Development.json`); en producción, el Gratis. | Las cuentas de prueba crean decenas de productos. Las pruebas de límites asignan el Gratis explícitamente. |
+| 142 | **"Mi plan" es una sección más del menú** (no está en la barra inferior del celular) y "Administración" solo aparece para administradores. | La barra inferior ya tiene sus 4 lugares. |
 
 ## Lector de Instagram (M11)
 
@@ -215,3 +234,4 @@ Agregado después, repasando lo que se decidió en la primera parte. Mismas marc
 4. **Cálculo del "ya cubriste X %"** (#4): ¿ganancia bruta contra gastos del mes está bien, o querés otra definición?
 5. **"Cliente" escondido en la venta** (#22) y **calculadora solo en Editar producto** (#31).
 6. **Anular siempre, nunca borrar** (#8), incluso gastos cargados por error.
+7. **Precios de los planes** (#129) y **qué pasa al vencer** (#135). Y los datos reales de cobro (QR/cuenta) para el texto de pago (#131).

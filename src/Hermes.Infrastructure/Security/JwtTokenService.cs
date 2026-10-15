@@ -12,6 +12,9 @@ public class JwtTokenService
 {
     // Mismo nombre que lee TiendaActualDesdeToken en la API.
     public const string ClaimTienda = "tienda";
+    // El rol de plataforma (administrador). La política "Admin" de la API exige este claim.
+    public const string ClaimRol = "rol";
+    public const string RolAdministrador = "admin";
 
     private readonly JwtOptions _opciones;
     private readonly TimeProvider _reloj;
@@ -29,14 +32,17 @@ public class JwtTokenService
 
         // "sub" llega a la API renombrado a ClaimTypes.NameIdentifier por el mapeo por defecto
         // de AddJwtBearer (misma trampa documentada en CMP). "tienda" no se renombra.
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, usuario.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Email, usuario.Email),
-            new Claim(JwtRegisteredClaimNames.Name, usuario.Nombre),
-            new Claim(ClaimTienda, tienda.Id.ToString()),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new(JwtRegisteredClaimNames.Sub, usuario.Id.ToString()),
+            new(JwtRegisteredClaimNames.Email, usuario.Email),
+            new(JwtRegisteredClaimNames.Name, usuario.Nombre),
+            new(ClaimTienda, tienda.Id.ToString()),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
         };
+        // El rol de plataforma SOLO viaja en el token si en la base el usuario es administrador (se decide al emitirlo, no lo
+        // elige el cliente). Dura lo que el token (15 min): si se le quita el rol, deja de renovarse.
+        if (usuario.EsAdministrador) claims.Add(new Claim(ClaimRol, RolAdministrador));
 
         var credenciales = new SigningCredentials(
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_opciones.SecretKey)), SecurityAlgorithms.HmacSha256);

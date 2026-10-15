@@ -483,3 +483,4 @@ $RECYCLE.BIN/
 
 # Credenciales de la tienda de demostración (solo desarrollo)
 scripts/demo.local.json
+scripts/admin.local.json

@@ -52,7 +52,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ClockSkew = TimeSpan.FromMinutes(1),
         };
     });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(o => o.AgregarPoliticas());
 builder.Services.AddLimites();
 
 // CORS con lista explícita de orígenes (nunca AllowAnyOrigin) — el frontend React vive en
@@ -69,6 +69,28 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Comandos de administración (se corren en el servidor, sin levantar la API):
+//   dotnet run --project src/Hermes.Api -- promover-admin <email>   /   quitar-admin <email>
+// El rol de administrador NUNCA se da desde la web: sin verificación de email, "admin por email" sería una puerta abierta.
+if (args is ["promover-admin" or "quitar-admin", var emailAdmin])
+{
+    await using var ambito = app.Services.CreateAsyncScope();
+    var contexto = ambito.ServiceProvider.GetRequiredService<HermesDbContext>();
+    var correo = emailAdmin.Trim().ToLowerInvariant();
+    var usuario = await contexto.Usuarios.FirstOrDefaultAsync(u => u.Email == correo);
+    if (usuario is null)
+    {
+        Console.Error.WriteLine($"No existe ninguna cuenta con el email {correo}. Primero hay que registrarla.");
+        return 1;
+    }
+    usuario.EsAdministrador = args[0] == "promover-admin";
+    await contexto.SaveChangesAsync();
+    Console.WriteLine(usuario.EsAdministrador
+        ? $"{correo} ahora es administrador. Tiene que volver a iniciar sesión para que el token lo incluya."
+        : $"{correo} ya no es administrador.");
+    return 0;
+}
 
 app.UseExceptionHandler(_ => { });
 
@@ -109,3 +131,4 @@ catch (Exception ex)
 }
 
 app.Run();
+return 0;
