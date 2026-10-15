@@ -150,6 +150,9 @@ img { max-width: 100%; height: auto; display: block; }
 .boton:disabled { opacity: 0.55; cursor: not-allowed; }
 .enviado { display: flex; flex-direction: column; gap: 12px; text-align: center; padding: 20px 16px; border-radius: 16px; background: var(--superficie); border: 1px solid var(--borde); }
 .enviado p { margin: 0; color: var(--suave); }
+.carrito ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.carrito > p { margin: 0; }
+.nota a { color: inherit; }
 
 .error { max-width: 520px; margin: 18vh auto 0; padding: 16px; text-align: center; }
 .error p { color: var(--suave); }

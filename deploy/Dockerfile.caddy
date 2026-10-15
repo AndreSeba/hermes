@@ -1,0 +1,16 @@
+# Caddy (HTTPS automático con Let's Encrypt) + el panel ya compilado (Hermes.Web, el repo hermano).
+# Contexto: la carpeta que contiene los DOS repos (Hermes y Hermes.Web), por eso docker-compose usa `context: ../..`.
+
+FROM node:24-alpine AS panel
+WORKDIR /web
+RUN corepack enable
+COPY Hermes.Web/package.json Hermes.Web/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+COPY Hermes.Web/ ./
+# El panel llama a /api en el MISMO dominio (Caddy lo pasa a la API): sin CORS y sin otra dirección que configurar.
+ENV VITE_API_URL=""
+RUN pnpm build
+
+FROM caddy:2-alpine
+COPY Hermes/deploy/Caddyfile /etc/caddy/Caddyfile
+COPY --from=panel /web/dist /srv/panel

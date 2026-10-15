@@ -2,6 +2,7 @@ using System.Threading.RateLimiting;
 using Hermes.Application.Dtos;
 using Hermes.Application.Exceptions;
 using Hermes.Application.Interfaces;
+using Hermes.Compartido;
 using Hermes.Infrastructure;
 using Hermes.Public;
 
@@ -9,6 +10,8 @@ using Hermes.Public;
 // que el enlace que se comparte por WhatsApp tenga vista previa con foto (una SPA de React no la puede generar: el
 // rastreador de WhatsApp no ejecuta JavaScript). Usa los mismos servicios (IPublicoService) que la API, sin pasar por HTTP.
 var builder = WebApplication.CreateBuilder(args);
+builder.ConfigurarLogs();
+builder.ConfigurarProxy();
 
 builder.Services.AddRazorPages();
 // Texto legible en el HTML ("Mía", no "M&#xED;a"): se sigue escapando todo lo peligroso (< > & " '), solo se deja de
@@ -38,9 +41,11 @@ builder.Services.ConfigureHttpJsonOptions(o => o.SerializerOptions.Converters.Ad
 
 var app = builder.Build();
 
+app.UsarProxyYLogs();
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
+    app.UseHsts();
     app.UseHttpsRedirection();
 }
 app.UseStatusCodePagesWithReExecute("/Error", "?codigo={0}");
@@ -54,6 +59,9 @@ app.Use(async (contexto, siguiente) =>
 });
 
 app.UseStaticFiles();
+// El ruteo DESPUÉS de los archivos estáticos: si no, ASP.NET lo pone al principio y la página "/{slug}" se queda con
+// "/robots.txt" (lo toma por la dirección de una tienda) antes de que se sirva el archivo.
+app.UseRouting();
 app.UseRateLimiter();
 
 // La imagen de la vista previa de WhatsApp: siempre JPEG (WhatsApp y otros rastreadores a veces no leen WEBP).
@@ -102,6 +110,7 @@ app.MapPost("/{slug}/pedido", async (string slug, SolicitudDePedido s, IPublicoS
 }).RequireRateLimiting("pedidos");
 
 app.MapRazorPages();
+app.MapearSalud();
 
 app.Run();
 

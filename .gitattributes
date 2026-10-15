@@ -1,0 +1,6 @@
+
+# Archivos que corren en Linux (contenedores): siempre con fin de línea LF.
+*.sh text eol=lf
+deploy/Caddyfile text eol=lf
+deploy/Dockerfile.* text eol=lf
+deploy/*.yml text eol=lf

@@ -1,7 +1,7 @@
 # Decisiones tomadas sin consultar
 
 Registro de lo que se decidió por criterio propio mientras se construía (sin que el usuario lo pidiera de forma
-explícita). Cubre M0 a M11 y M13 (las de M6–M13 van primero; las de M0–M5 están en "Módulos anteriores"). Cada módulo nuevo
+explícita). Cubre M0 a M11, M13, M14 y el carrito (las de M6 en adelante van primero; las de M0–M5 están en "Módulos anteriores"). Cada módulo nuevo
 agrega acá las suyas. Cada una dice **por qué** y **cómo se cambia**. Las marcadas con ⚠️ son las que más conviene revisar
 porque cambian lo que ve o paga la dueña, o son difíciles de revertir.
 
@@ -77,6 +77,23 @@ producto (encendido por defecto) y "venta rápida" con cliente opcional.
 | 50 | Detuve y reinicié el proceso de la API en tu PC varias veces para compilar (solo el proceso de la API). |
 | 51 | Creé cuentas de prueba y datos de prueba en `hermes_dev` con cada corrida de los scripts e2e (se acumulan; es la base de desarrollo). |
 | 52 | Las capturas de pantalla de `docs/capturas/` se regeneran en cada e2e y se commitean. |
+
+## Salida a producción (M14)
+
+| # | Decisión | Por qué / cómo cambiarla |
+|---|---|---|
+| 154 ⚠️ | **Un VPS con Docker Compose** (Caddy + API + sitio público + Postgres + respaldo), no un servicio administrado. | Lo más barato (US$5–10) y portable; Caddy da HTTPS solo. Con más tráfico se puede pasar Postgres a un servicio administrado cambiando la cadena. |
+| 155 | **Dos dominios**: uno para el panel (con la API detrás en `/api`) y otro para las tiendas. | El panel y la API en el mismo dominio evitan CORS y la cookie de sesión queda `SameSite=Strict`. Las tiendas, aparte, para que sus enlaces sean cortos. |
+| 156 ⚠️ | **Row Level Security encendida en producción** con un rol de la app sin privilegios (`hermes_app`). | Segunda barrera: aunque un bug saltee el filtro de EF, Postgres no devuelve filas de otra tienda. Costo: una consulta extra (`set_config`) por conexión. Medido: 280 pedidos/s sin errores. |
+| 157 | **Las migraciones se aplican solas al arrancar la API** (con el dueño de las tablas). | Desplegar = levantar la imagen nueva. Con varias instancias de la API hay que apagarlo y migrar aparte. |
+| 158 | **Respaldo diario con 14 días** de historia, en el mismo servidor. | ⚠️ Hay que copiarlos FUERA (rclone a Drive o un bucket): la guía lo explica pero no lo automaticé (necesita una cuenta tuya). |
+| 159 | **Sentry opcional y sin datos personales** (`SendDefaultPii = false`). Sin DSN no se manda nada afuera. | |
+| 160 | **Limpieza cada hora**: refresh tokens vencidos y fotos subidas hace más de 24 h que nadie usa. | Las fotos huérfanas ocupaban espacio (y cuota del plan). 24 h da margen a quien está armando un producto. |
+| 161 | **R2 programado pero NO activado**: las fotos siguen en Postgres hasta que haya muchas tiendas. | Como decidiste en M2. Activarlo: cuenta de Cloudflare, `copiar-fotos-a-r2`, cambiar `Almacenamiento:Tipo`. No lo pude probar contra R2 real. |
+| 162 | **PWA mínima**: instalable, abre rápido; los datos (stock, ventas) NUNCA salen de la caché. | Mostrar stock viejo sin conexión sería peor que avisar "no hay conexión". |
+| 163 | **El ícono de la app es la bolsa del favicon, sin nombre**; el manifiesto usa el lema ("Tu negocio, simple." / "Mi negocio"). | Todavía no hay nombre de producto. Cuando lo haya, cambiarlo en `marca.ts` y en `manifest.webmanifest`. |
+| 164 ⚠️ | **Términos y privacidad escritos por mí, sin abogado**. El registro dice "al crear tu cuenta aceptás…". | Son un BORRADOR razonable; **revisarlos con un abogado en Bolivia antes de abrir al público**. |
+| 165 | **Las tiendas públicas se pueden indexar en Google** (menos el carrito); el panel no. | Que las encuentren es parte del valor. Una tienda que no quiera aparecer puede despublicarse. |
 
 ## Carrito y pedidos
 
@@ -254,3 +271,4 @@ Agregado después, repasando lo que se decidió en la primera parte. Mismas marc
 6. **Anular siempre, nunca borrar** (#8), incluso gastos cargados por error.
 7. **Precios de los planes** (#129) y **qué pasa al vencer** (#135). Y los datos reales de cobro (QR/cuenta) para el texto de pago (#131).
 8. **Carrito**: que pedir no reserve stock (#144) y que la venta se cobre al precio de hoy (#146).
+9. **Producción**: elegir el servidor (#154), revisar términos y privacidad con un abogado (#164) y dónde copiar los respaldos (#158).

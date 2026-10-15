@@ -14,7 +14,11 @@ public interface IAlmacenArchivos
 
     Task BorrarAsync(IEnumerable<string> claves, CancellationToken ct);
 
-    // Dirección pública del archivo. En la base: /archivos/{clave} (lo sirve la API); en R2 será
-    // la del subdominio de fotos.
+    // Dirección pública del archivo. En la base: /archivos/{clave} (lo sirve la API); en R2, la del
+    // subdominio de fotos.
     string Url(string clave);
+
+    // Lo inverso de Url: la clave a partir de una dirección que armó este almacén (null si no es suya).
+    // La usa la vista previa de la tienda pública para leer la foto del producto.
+    string? ClaveDeUrl(string url);
 }

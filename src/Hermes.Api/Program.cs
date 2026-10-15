@@ -1,6 +1,7 @@
 using System.Text;
 using Hermes.Api.Middleware;
 using Hermes.Api.Security;
+using Hermes.Compartido;
 using Hermes.Application.Interfaces;
 using Hermes.Infrastructure;
 using Hermes.Infrastructure.Persistence;
@@ -11,6 +12,8 @@ using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.ConfigurarLogs();
+builder.ConfigurarProxy();
 
 // JSON de la API, igual para los controllers (MVC) y para el generador de OpenAPI (que lee las opciones
 // "http", otras): si solo se configura uno, el esquema que ve el front no coincide con lo que viaja.
@@ -28,6 +31,8 @@ builder.Services.AddOpenApi();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ITiendaActual, TiendaActualDesdeToken>();
 builder.Services.AddInfrastructure(builder.Configuration);
+// Refresh tokens vencidos y fotos que nadie usa, cada hora (Limpieza:*). Solo acá: el sitio público no la corre.
+builder.Services.AddHostedService<Hermes.Infrastructure.Mantenimiento.LimpiezaPeriodica>();
 
 builder.Services.AddExceptionHandler<ManejadorGlobalDeExcepciones>();
 builder.Services.AddProblemDetails();
@@ -92,6 +97,20 @@ if (args is ["promover-admin" or "quitar-admin", var emailAdmin])
     return 0;
 }
 
+// Pasar las fotos de la base a Cloudflare R2, una vez (con Almacenamiento:R2 configurado):
+//   dotnet Hermes.Api.dll copiar-fotos-a-r2      (después cambiar Almacenamiento:Tipo a R2 y reiniciar)
+if (args is ["copiar-fotos-a-r2"])
+{
+    await using var ambito = app.Services.CreateAsyncScope();
+    var opciones = Microsoft.Extensions.Options.Options.Create(app.Configuration.GetSection("Almacenamiento").Get<Hermes.Infrastructure.Imagenes.AlmacenamientoOptions>() ?? new());
+    using var cliente = new Hermes.Infrastructure.Imagenes.ClienteR2(opciones);
+    var total = await Hermes.Infrastructure.Imagenes.AlmacenEnObjetos.CopiarDesdeLaBaseAsync(
+        ambito.ServiceProvider.GetRequiredService<HermesDbContext>(), cliente, n => Console.WriteLine($"{n} archivos copiados…"), CancellationToken.None);
+    Console.WriteLine($"Listo: {total} archivos en R2. Ahora cambiá Almacenamiento:Tipo a R2 y reiniciá la API y el sitio público.");
+    return 0;
+}
+
+app.UsarProxyYLogs();
 app.UseExceptionHandler(_ => { });
 
 if (app.Environment.IsDevelopment())
@@ -106,13 +125,29 @@ if (app.Environment.IsDevelopment())
 // En desarrollo el front (Vite) llama por HTTP a través de su proxy: así no hace falta
 // confiar en el certificado de desarrollo. En producción HTTPS es obligatorio.
 if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
     app.UseHttpsRedirection();
+}
 
 app.UseCors("Web");
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
 app.MapControllers();
+app.MapearSalud();
+
+// En producción (una sola instancia de la API) las migraciones se aplican al arrancar si `Base:MigrarAlArrancar` = true:
+// así desplegar es solo levantar la imagen nueva. Con varias instancias, apagarlo y migrar aparte antes de desplegar.
+// Con Row Level Security la app entra con un rol sin privilegios que no puede cambiar el esquema: las migraciones van con el
+// DUEÑO de las tablas (`ConnectionStrings:HermesDbMigraciones`). Sin esa cadena, con la misma de la app.
+if (app.Configuration.GetValue<bool>("Base:MigrarAlArrancar"))
+{
+    var cadena = app.Configuration.GetConnectionString("HermesDbMigraciones") ?? app.Configuration.GetConnectionString("HermesDb")!;
+    var opciones = (DbContextOptionsBuilder<HermesDbContext>)HermesDbContext.Configurar(new DbContextOptionsBuilder<HermesDbContext>(), cadena);
+    await using var db = new HermesDbContext(opciones.Options, new SinTienda());
+    await db.Database.MigrateAsync();
+}
 
 // Si el código es más nuevo que la base, avisarlo al arrancar ahorra buscar el problema en otro lado.
 try
@@ -132,3 +167,9 @@ catch (Exception ex)
 
 app.Run();
 return 0;
+
+// Las migraciones no son de ninguna tienda.
+sealed class SinTienda : ITiendaActual
+{
+    public Guid? TiendaId => null;
+}

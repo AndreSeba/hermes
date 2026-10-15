@@ -26,7 +26,7 @@ public static class VistaPrevia
         canvas.Clear(SKColor.Parse(paleta.Superficie));
 
         SKBitmap? foto = null;
-        if (urlFoto is not null && Urls.ClaveDe(urlFoto) is { } clave && await almacen.ObtenerAsync(clave, ct) is { } archivo)
+        if (urlFoto is not null && almacen.ClaveDeUrl(urlFoto) is { } clave && await almacen.ObtenerAsync(clave, ct) is { } archivo)
             foto = SKBitmap.Decode(archivo.Datos);
         using (foto)
         {

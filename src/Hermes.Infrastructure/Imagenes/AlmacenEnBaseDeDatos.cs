@@ -47,4 +47,11 @@ public class AlmacenEnBaseDeDatos : IAlmacenArchivos
     }
 
     public string Url(string clave) => $"/archivos/{clave}";
+
+    public string? ClaveDeUrl(string url)
+    {
+        const string marca = "/archivos/";
+        var i = url.IndexOf(marca, StringComparison.Ordinal);
+        return i < 0 ? null : url[(i + marca.Length)..];
+    }
 }

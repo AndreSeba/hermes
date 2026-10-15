@@ -1,0 +1,35 @@
+# Imagen de la API o del sitio público (los dos son .NET y comparten la solución). Se elige con PROYECTO:
+#   docker build -f deploy/Dockerfile.dotnet --build-arg PROYECTO=Hermes.Api    -t hermes-api .
+#   docker build -f deploy/Dockerfile.dotnet --build-arg PROYECTO=Hermes.Public -t hermes-public .
+# Contexto: la raíz de este repo.
+
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS compilar
+ARG PROYECTO
+WORKDIR /src
+# Primero solo los .csproj: la restauración queda en caché mientras no cambien los paquetes.
+COPY src/Hermes.Domain/Hermes.Domain.csproj src/Hermes.Domain/
+COPY src/Hermes.Application/Hermes.Application.csproj src/Hermes.Application/
+COPY src/Hermes.Infrastructure/Hermes.Infrastructure.csproj src/Hermes.Infrastructure/
+COPY src/Hermes.Api/Hermes.Api.csproj src/Hermes.Api/
+COPY src/Hermes.Public/Hermes.Public.csproj src/Hermes.Public/
+RUN dotnet restore src/${PROYECTO}/${PROYECTO}.csproj -r linux-x64
+COPY src/ src/
+RUN dotnet publish src/${PROYECTO}/${PROYECTO}.csproj -c Release -r linux-x64 --self-contained false --no-restore -o /salida
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
+ARG PROYECTO
+# SkiaSharp en Linux necesita fontconfig, y la imagen de vista previa (nombre de la tienda) necesita alguna fuente.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libfontconfig1 fonts-dejavu-core curl \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY --from=compilar /salida .
+ENV ASPNETCORE_URLS=http://+:8080 \
+    ASPNETCORE_ENVIRONMENT=Production \
+    DOTNET_RUNNING_IN_CONTAINER=true \
+    PROYECTO=${PROYECTO}
+EXPOSE 8080
+# Corre como el usuario sin privilegios que trae la imagen oficial.
+USER app
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 CMD curl -fsS http://localhost:8080/salud || exit 1
+ENTRYPOINT ["sh", "-c", "exec dotnet ${PROYECTO}.dll"]

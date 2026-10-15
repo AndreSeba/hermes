@@ -1,0 +1,115 @@
+# Todo el sistema en un servidor (VPS) con Docker. Desde esta carpeta:
+#   cp .env.example .env    (y completar)
+#   docker compose up -d --build
+# Ver docs/DESPLIEGUE.md.
+
+name: hermes
+
+# Lo común a la API y al sitio público. La app entra con hermes_app (sin privilegios: le aplica la Row Level Security).
+x-dotnet: &dotnet
+  ConnectionStrings__HermesDb: Host=postgres;Port=5432;Database=hermes;Username=hermes_app;Password=${APP_DB_PASSWORD}
+  Base__SeguridadPorFila: "true"
+  Jwt__SecretKey: ${JWT_SECRET:?Falta JWT_SECRET en .env (64 caracteres al azar)}
+  Sentry__Dsn: ${SENTRY_DSN:-}
+  # Caddy llega desde la red interna de Docker: solo en esos proxies se confía para X-Forwarded-For.
+  Proxy__Redes__0: 172.16.0.0/12
+  Proxy__Redes__1: 192.168.0.0/16
+  Proxy__Redes__2: 10.0.0.0/8
+  AllowedHosts: ${DOMINIO_PANEL};${DOMINIO_TIENDA};localhost
+  Publico__ArchivosBaseUrl: ""
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hermes
+      POSTGRES_USER: hermes
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD en .env}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?Falta APP_DB_PASSWORD en .env}
+    volumes:
+      - datos:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hermes -d hermes"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # Sin puertos publicados: solo la ven los otros servicios de esta red.
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.dotnet
+      args:
+        PROYECTO: Hermes.Api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *dotnet
+      # Las migraciones (al arrancar) van con el DUEÑO de las tablas; solo la API conoce esta clave.
+      ConnectionStrings__HermesDbMigraciones: Host=postgres;Port=5432;Database=hermes;Username=hermes;Password=${POSTGRES_PASSWORD}
+      Base__MigrarAlArrancar: "true"
+      CorsOrigenesPermitidos__0: https://${DOMINIO_PANEL}
+      Planes__PlanSinSuscripcion: gratis
+      Planes__InstruccionesDePago: ${INSTRUCCIONES_DE_PAGO:-Pagá por QR o transferencia y subí la foto del comprobante.}
+
+  public:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.dotnet
+      args:
+        PROYECTO: Hermes.Public
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      <<: *dotnet
+
+  caddy:
+    build:
+      context: ../..
+      dockerfile: Hermes/deploy/Dockerfile.caddy
+    restart: unless-stopped
+    depends_on:
+      - api
+      - public
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMINIO_PANEL: ${DOMINIO_PANEL:?Falta DOMINIO_PANEL en .env}
+      DOMINIO_TIENDA: ${DOMINIO_TIENDA:?Falta DOMINIO_TIENDA en .env}
+      EMAIL_CERTIFICADOS: ${EMAIL_CERTIFICADOS:?Falta EMAIL_CERTIFICADOS en .env}
+    volumes:
+      - caddy_datos:/data
+      - caddy_config:/config
+
+  # Respaldo diario de la base (pg_dump comprimido), se guardan los últimos DIAS_RESPALDO días en ./respaldos.
+  # Con el DUEÑO (no con hermes_app: la Row Level Security le escondería todas las filas y el respaldo saldría vacío).
+  # IMPORTANTE: copiar esa carpeta FUERA del servidor (ver docs/DESPLIEGUE.md).
+  respaldo:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: hermes
+      PGDATABASE: hermes
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      DIAS_RESPALDO: ${DIAS_RESPALDO:-14}
+    volumes:
+      - ./respaldos:/respaldos
+      - ./respaldo.sh:/respaldo.sh:ro
+    entrypoint: ["sh", "/respaldo.sh"]
+
+volumes:
+  datos:
+  caddy_datos:
+  caddy_config:

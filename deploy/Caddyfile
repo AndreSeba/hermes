@@ -1,0 +1,52 @@
+# Dos dominios (se ponen en .env): el panel de las dueñas y las tiendas públicas. Caddy saca y renueva solo los
+# certificados HTTPS (Let's Encrypt): los dos dominios tienen que apuntar (registro A) a la IP del servidor.
+{
+	email {$EMAIL_CERTIFICADOS}
+}
+
+(seguridad) {
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+	encode zstd gzip
+}
+
+# ───────────── El panel (React) + la API ─────────────
+{$DOMINIO_PANEL} {
+	import seguridad
+
+	handle /api/* {
+		reverse_proxy api:8080
+	}
+	handle /archivos/* {
+		reverse_proxy api:8080
+	}
+	# Scalar y OpenAPI solo existen en desarrollo: en producción no se publican.
+	handle {
+		root * /srv/panel
+		# Los archivos con hash en el nombre (assets/) no cambian nunca: caché de un año. index.html, nunca.
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		@html path / /index.html
+		header @html Cache-Control "no-cache"
+		header X-Frame-Options DENY
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+# ───────────── Las tiendas públicas ─────────────
+{$DOMINIO_TIENDA} {
+	import seguridad
+
+	# Las fotos las sirve la API (mientras estén en la base): la tienda las pide en su mismo dominio.
+	handle /archivos/* {
+		reverse_proxy api:8080
+	}
+	handle {
+		reverse_proxy public:8080
+	}
+}

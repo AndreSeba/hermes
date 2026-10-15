@@ -18,9 +18,14 @@ public static class DependencyInjection
         var connectionString = configuration.GetConnectionString("HermesDb")
             ?? throw new InvalidOperationException("Falta la cadena de conexión 'HermesDb' en la configuración.");
 
-        services.AddDbContext<HermesDbContext>(options => options
-            .UseNpgsql(connectionString, npgsql => npgsql.MigrationsHistoryTable("__ef_migraciones", HermesDbContext.Esquema))
-            .UseSnakeCaseNamingConvention());
+        // Segunda barrera multi-tienda en Postgres (Row Level Security): ver Persistence/SeguridadPorFila.cs. Se enciende en
+        // producción, donde la app entra con un rol sin privilegios; en desarrollo (superusuario) no cambiaría nada.
+        var seguridadPorFila = configuration.GetValue<bool>("Base:SeguridadPorFila");
+        services.AddDbContext<HermesDbContext>(options =>
+        {
+            HermesDbContext.Configurar(options, connectionString);
+            if (seguridadPorFila) options.ConSeguridadPorFila();
+        });
 
         services.AddSingleton(TimeProvider.System);
         services.AddMemoryCache();
@@ -28,9 +33,19 @@ public static class DependencyInjection
         services.AddSingleton<JwtTokenService>();
         services.AddSingleton<BloqueoDeLogin>();
 
-        // Para pasar las fotos a Cloudflare R2 (docs/PLAN.md, M2/M14): otra implementación de
-        // IAlmacenArchivos acá. Ningún servicio cambia.
-        services.AddScoped<IAlmacenArchivos, AlmacenEnBaseDeDatos>();
+        // Dónde viven las fotos (Almacenamiento:Tipo): "Base" (tabla `archivos`, hoy) o "R2" (Cloudflare R2). Ningún servicio
+        // cambia: todos usan IAlmacenArchivos. Para pasar a R2: comando `copiar-fotos-a-r2` y recién después cambiar el tipo.
+        services.Configure<AlmacenamientoOptions>(configuration.GetSection(AlmacenamientoOptions.SectionName));
+        var almacenamiento = configuration[$"{AlmacenamientoOptions.SectionName}:Tipo"] ?? "Base";
+        if (almacenamiento.Equals("R2", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddSingleton<IClienteDeObjetos, ClienteR2>();
+            services.AddScoped<IAlmacenArchivos, AlmacenEnObjetos>();
+        }
+        else if (almacenamiento.Equals("Base", StringComparison.OrdinalIgnoreCase))
+            services.AddScoped<IAlmacenArchivos, AlmacenEnBaseDeDatos>();
+        else
+            throw new InvalidOperationException($"Almacenamiento:Tipo '{almacenamiento}' no existe: tiene que ser Base o R2.");
         services.AddScoped<IImagenService, ImagenService>();
 
         services.AddScoped<IOperacionesStock, OperacionesStock>();
@@ -38,6 +53,9 @@ public static class DependencyInjection
         services.AddScoped<IVentaService, VentaService>();
         services.AddScoped<IPedidoService, PedidoService>();
         services.Configure<Planes.PlanesOptions>(configuration.GetSection(Planes.PlanesOptions.SectionName));
+        services.Configure<Mantenimiento.LimpiezaOptions>(configuration.GetSection(Mantenimiento.LimpiezaOptions.SectionName));
+        // La limpieza en sí; la tarea que la corre cada hora (LimpiezaPeriodica) la registra SOLO la API, no el sitio público.
+        services.AddScoped<Mantenimiento.Limpieza>();
         services.AddScoped<Planes.PlanesDeTienda>();
         services.AddScoped<ILimitesDePlan, Planes.LimitesDePlan>();
         services.AddScoped<IPlanService, Planes.PlanService>();

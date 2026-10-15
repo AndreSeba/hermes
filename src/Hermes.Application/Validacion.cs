@@ -99,6 +99,8 @@ public static class Validacion
         "soporte", "precios", "planes", "tienda", "tiendas", "static", "assets", "scalar", "openapi",
         // Rutas de la tienda pública (Hermes.Public).
         "error", "archivos", "css", "js", "og",
+        // Producción: chequeo de salud, legales, PWA.
+        "salud", "terminos", "privacidad", "manifest", "favicon", "robots", "sitemap",
     ];
 
     // hermes.bo/{slug}: minúsculas, números y guiones; 2 a 40 caracteres; empieza con letra o número.

@@ -14,4 +14,12 @@
     <ProjectReference Include="..\Hermes.Infrastructure\Hermes.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Sentry.Serilog" Version="6.12.1" />
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Compartido\Produccion.cs" Link="Compartido\Produccion.cs" />
+  </ItemGroup>
 </Project>

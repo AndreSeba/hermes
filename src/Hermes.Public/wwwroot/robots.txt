@@ -1,0 +1,4 @@
+# Las tiendas publicas se pueden indexar. El carrito y los pedidos, no.
+User-agent: *
+Disallow: /*/carrito
+Disallow: /*/pedido

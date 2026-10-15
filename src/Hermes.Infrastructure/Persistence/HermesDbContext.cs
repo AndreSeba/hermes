@@ -17,6 +17,12 @@ public class HermesDbContext : DbContext
         _tiendaActual = tiendaActual;
     }
 
+    // La configuración de Postgres, en un solo lugar (la usan la inyección de dependencias y las migraciones al arrancar).
+    public static DbContextOptionsBuilder Configurar(DbContextOptionsBuilder opciones, string cadena)
+        => opciones
+            .UseNpgsql(cadena, npgsql => npgsql.MigrationsHistoryTable("__ef_migraciones", Esquema))
+            .UseSnakeCaseNamingConvention();
+
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<Tienda> Tiendas => Set<Tienda>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
@@ -44,6 +50,33 @@ public class HermesDbContext : DbContext
     // Lo lee el filtro global en cada consulta (EF lo parametriza por instancia del contexto),
     // así cada request ve solo su tienda. Sin tienda en sesión el filtro no devuelve nada.
     private Guid? TiendaIdActual => _tiendaActual.TiendaId;
+
+    // ───────────── Segunda barrera: Row Level Security en Postgres (ver Persistence/SeguridadPorFila.cs) ─────────────
+
+    private int _accesoATodas;
+
+    // Lo poquito que legítimamente cruza tiendas (panel del administrador, uso de los planes, limpieza periódica) lo hace
+    // DENTRO de este bloque: `using (_db.AccesoATodasLasTiendas()) { ... }`. Además de IgnoreQueryFilters (el filtro de EF),
+    // hace falta esto para que Postgres (RLS) deje pasar las filas de otras tiendas. Fuera del bloque, solo la de la sesión.
+    public IDisposable AccesoATodasLasTiendas()
+    {
+        _accesoATodas++;
+        return new FinDelAcceso(this);
+    }
+
+    private sealed class FinDelAcceso(HermesDbContext db) : IDisposable
+    {
+        private bool _cerrado;
+        public void Dispose()
+        {
+            if (_cerrado) return;
+            _cerrado = true;
+            db._accesoATodas--;
+        }
+    }
+
+    // Lo que se le dice a Postgres en `hermes.tienda`: "*" = todas, el Id de la tienda de la sesión, o "" = ninguna.
+    internal string TiendaParaLaBase => _accesoATodas > 0 ? "*" : _tiendaActual.TiendaId?.ToString() ?? string.Empty;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

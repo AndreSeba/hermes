@@ -10,12 +10,5 @@ public class Urls
     public Urls(IConfiguration configuracion) => _archivos = (configuracion["Publico:ArchivosBaseUrl"] ?? string.Empty).TrimEnd('/');
 
     public string Foto(string url) => url.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? url : _archivos + url;
-
-    // La clave que entiende IAlmacenArchivos ("{tienda}/imagenes/{id}/detalle.webp") a partir de la dirección de la foto.
-    public static string? ClaveDe(string url)
-    {
-        const string marca = "/archivos/";
-        var i = url.IndexOf(marca, StringComparison.Ordinal);
-        return i < 0 ? null : url[(i + marca.Length)..];
-    }
+    // (La clave de una foto a partir de su dirección la sabe el almacén: IAlmacenArchivos.ClaveDeUrl.)
 }

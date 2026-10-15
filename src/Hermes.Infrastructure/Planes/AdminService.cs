@@ -35,6 +35,7 @@ public class AdminService : IAdminService
 
     public async Task<PaginaDePagosDto> PagosAsync(FiltroPagosDto filtro, CancellationToken ct)
     {
+        using var todas = _db.AccesoATodasLasTiendas(); // comprobantes de cualquier tienda (RLS)
         if (!Enum.IsDefined(filtro.Estado)) throw new ValidacionException("El estado pedido no existe.");
         var limite = Math.Clamp(filtro.Limite ?? LimitePorDefecto, 1, LimiteMaximo);
         var estado = filtro.Estado;
@@ -52,6 +53,7 @@ public class AdminService : IAdminService
 
     public async Task<PagoParaRevisarDto> AprobarAsync(Guid pagoId, Guid adminId, CancellationToken ct)
     {
+        using var todas = _db.AccesoATodasLasTiendas();
         try
         {
             await using var transaccion = await _db.Database.BeginTransactionAsync(ct);
@@ -77,6 +79,7 @@ public class AdminService : IAdminService
 
     public async Task<PagoParaRevisarDto> RechazarAsync(Guid pagoId, Guid adminId, RechazarPagoDto dto, CancellationToken ct)
     {
+        using var todas = _db.AccesoATodasLasTiendas();
         var motivo = Validacion.Texto(dto?.Motivo, 300, "El motivo");
         var ahora = _planes.Ahora;
         var marcados = await _db.PagosPlan.Where(p => p.Id == pagoId && p.Estado == EstadoPago.Pendiente)
@@ -115,6 +118,7 @@ public class AdminService : IAdminService
 
     public async Task<PaginaDeTiendasDto> TiendasAsync(FiltroTiendasDto filtro, CancellationToken ct)
     {
+        using var todas = _db.AccesoATodasLasTiendas(); // uso (productos, fotos) de cada tienda (RLS)
         var limite = Math.Clamp(filtro.Limite ?? LimitePorDefecto, 1, LimiteMaximo);
         var consulta = _db.Tiendas.AsNoTracking().Include(t => t.Dueno).AsQueryable();
         if (!string.IsNullOrWhiteSpace(filtro.Buscar))
@@ -146,6 +150,7 @@ public class AdminService : IAdminService
 
     public async Task<AdminTiendaDto> AsignarPlanAsync(Guid tiendaId, Guid adminId, AsignarPlanDto dto, CancellationToken ct)
     {
+        using var todas = _db.AccesoATodasLasTiendas();
         if (dto.Meses is < 1 or > MaximoMeses) throw new ValidacionException($"Los meses tienen que estar entre 1 y {MaximoMeses} (o vacío, sin vencimiento).");
         var tienda = await _db.Tiendas.AsNoTracking().Include(t => t.Dueno).FirstOrDefaultAsync(t => t.Id == tiendaId, ct) ?? throw new TiendaNoEncontradaException(tiendaId);
         var plan = await _db.Planes.AsNoTracking().FirstOrDefaultAsync(p => p.Id == dto.PlanId, ct) ?? throw new PlanNoEncontradoException(dto.PlanId);

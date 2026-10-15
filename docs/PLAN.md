@@ -250,7 +250,14 @@ No incluido: cobro automático, prorrateo, avisos de vencimiento, verificación 
   (rol de plataforma, distinto del dueño de tienda).
 - ⚠️ Verificar precios de la competencia antes de fijar los montos.
 
-### M14 · Salida a producción — **M**
+### M14 · Salida a producción — **M** ✅ (2026-10-14)
+Hecho, listo para desplegar (guía: `docs/DESPLIEGUE.md`): Docker Compose con Caddy (HTTPS automático), Postgres y respaldo
+diario; Serilog (JSON) + Sentry opcional; ForwardedHeaders; `/salud`; secretos por variables de entorno; migraciones al
+arrancar; **Row Level Security** con un rol sin privilegios (probada con todas las pruebas de punta a punta); limpieza de
+refresh tokens y fotos huérfanas; **R2 listo sin activar**; PWA instalable; términos y privacidad (BORRADOR, revisar con
+abogado); prueba de carga (280 pedidos/s sin errores, stock exacto). **Falta (necesita al usuario)**: elegir y contratar el
+servidor y los dominios, levantar `docker compose` la primera vez (no se pudo acá: no hay Docker), datos reales de cobro,
+cuenta de Sentry y, más adelante, la de Cloudflare R2.
 - Hosting (decidir VPS vs. administrado), HTTPS, `ForwardedHeaders` detrás del proxy, secretos por
   variables de entorno, respaldos diarios de Postgres, Serilog + Sentry, limpieza de refresh tokens
   vencidos, Row Level Security como segunda barrera multi-tienda.
@@ -273,7 +280,7 @@ No incluido: cobro automático, prorrateo, avisos de vencimiento, verificación 
 | 4 | Tienda pública: Razor Pages o React | M10 | Razor Pages (vista previa en WhatsApp) |
 | 5 | Requisitos actuales de Meta | M12 | Verificar antes de empezar |
 | 6 | Precios de los planes | M13 | Provisorios (Bs 0 / 39 / 89): verificar competencia y ajustar en el panel |
-| 7 | Hosting | M14 | VPS chico (US$5–10) al inicio |
+| 7 | Hosting | M14 | VPS chico (US$5–10) al inicio — todo listo para Docker (`docs/DESPLIEGUE.md`); falta contratarlo |
 | 8 | **Nombre del producto** | antes de M10 (la tienda pública lo muestra) | — |
 
 ## Orden y dependencias
