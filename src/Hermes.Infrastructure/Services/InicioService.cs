@@ -17,13 +17,15 @@ public class InicioService : IInicioService
     private readonly ICompraService _compras;
     private readonly IStockService _stock;
     private readonly IGastoService _gastos;
+    private readonly IPedidoService? _pedidos;
 
-    public InicioService(IVentaService ventas, ICompraService compras, IStockService stock, IGastoService gastos)
+    public InicioService(IVentaService ventas, ICompraService compras, IStockService stock, IGastoService gastos, IPedidoService? pedidos = null)
     {
         _ventas = ventas;
         _compras = compras;
         _stock = stock;
         _gastos = gastos;
+        _pedidos = pedidos;
     }
 
     public async Task<InicioDto> ResumenAsync(FiltroPeriodoDto periodo, CancellationToken ct)
@@ -36,6 +38,7 @@ public class InicioService : IInicioService
         var reponer = await _stock.ListarAsync(new FiltroStockDto(Vista: VistaStock.AReponer, Limite: MaximoParaReponer), ct);
 
         var recientes = await RecientesAsync(ct);
+        var pedidos = _pedidos is null ? null : await _pedidos.ResumenAsync(ct);
 
         // "Ya cubriste el X % de los gastos": la ganancia del período contra los gastos del período.
         int? cubierto = gastos > 0 ? (int)Math.Max(0, Math.Floor(ventas.Ganancia / gastos * 100)) : null;
@@ -46,7 +49,8 @@ public class InicioService : IInicioService
             compras.PorPagar, compras.EnCamino,
             stock.Agotados, stock.PorAgotarse,
             reponer.Items.Select(p => new ProductoParaReponerDto(p.Id, p.Nombre, p.Estado, p.Stock ?? 0)).ToList(),
-            recientes);
+            recientes,
+            pedidos is null ? 0 : pedidos.Nuevos + pedidos.Confirmados);
     }
 
     // Las últimas ventas, compras y gastos (no anulados) mezclados por fecha: lo que pasó últimamente, sin importar el período.

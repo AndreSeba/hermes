@@ -78,6 +78,24 @@ producto (encendido por defecto) y "venta rápida" con cliente opcional.
 | 51 | Creé cuentas de prueba y datos de prueba en `hermes_dev` con cada corrida de los scripts e2e (se acumulan; es la base de desarrollo). |
 | 52 | Las capturas de pantalla de `docs/capturas/` se regeneran en cada e2e y se commitean. |
 
+## Carrito y pedidos
+
+Tus decisiones: el pedido queda guardado en el panel **y** se abre WhatsApp; se piden nombre, celular y entrega. El resto lo decidí yo:
+
+| # | Decisión | Por qué / cómo cambiarla |
+|---|---|---|
+| 143 | **El carrito vive en el navegador del cliente** (no en la base) y se revisa contra el servidor al abrirlo. | Sin cuenta de cliente no hay a quién atarlo; así no se guarda basura de carritos abandonados. |
+| 144 ⚠️ | **Pedir NO reserva ni descuenta stock**: recién "Entregar y cobrar" registra la venta. | Si reservara, cualquiera podría "vaciar" la tienda con pedidos falsos. La dueña confirma por WhatsApp antes. |
+| 145 ⚠️ | **Solo se rechaza lo AGOTADO** (y solo si la tienda muestra disponibilidad). Pedir 50 de algo que tiene 2 se acepta. | Rechazar "no alcanza" dejaría adivinar el stock exacto probando cantidades. La dueña lo resuelve al confirmar. |
+| 146 ⚠️ | **La venta se registra al precio de HOY** (no al del pedido). Si cambió, el detalle del pedido lo avisa. | Las ventas no tienen precio editable (decisión de M6). Si querés respetar el precio del pedido, hay que habilitar precio por línea en ventas. |
+| 147 | **El carrito usa el interruptor "Pedidos por WhatsApp"** de Mi tienda: apagado, no hay carrito ni botón. | No agregué otro interruptor. |
+| 148 | **Se mantiene "Pedir solo este por WhatsApp"** en cada producto, como alternativa al carrito (y lo único que hay sin JavaScript). | Hay clientes que prefieren escribir directo. |
+| 149 | **Hasta 30 productos distintos y 99 unidades de cada uno** por pedido. | Topes contra abusos; se cambian en `Pedido`. |
+| 150 | **Anti-spam**: campo trampa invisible + **30 pedidos cada 10 min por IP y por tienda**. Sin captcha. | Un captcha espanta clientes. Por tienda porque en Bolivia muchos celulares comparten IP. |
+| 151 | **Número de pedido correlativo por tienda** (#1, #2…), para que la dueña y el cliente lo nombren igual. | |
+| 152 | **Estados**: Nuevo → Confirmado (opcional) → Entregado, o Cancelado con motivo opcional. Un pedido nunca se borra. | Mismo criterio de todo el proyecto. |
+| 153 | **"Pedidos" va en el menú lateral con un número** de pendientes, y en el Inicio ("Para atender"). No está en la barra inferior del celular. | La barra ya tiene sus 4 lugares; desde el Inicio se llega en un toque. |
+
 ## Planes y panel admin (M13)
 
 | # | Decisión | Por qué / cómo cambiarla |
@@ -235,3 +253,4 @@ Agregado después, repasando lo que se decidió en la primera parte. Mismas marc
 5. **"Cliente" escondido en la venta** (#22) y **calculadora solo en Editar producto** (#31).
 6. **Anular siempre, nunca borrar** (#8), incluso gastos cargados por error.
 7. **Precios de los planes** (#129) y **qué pasa al vencer** (#135). Y los datos reales de cobro (QR/cuenta) para el texto de pago (#131).
+8. **Carrito**: que pedir no reserve stock (#144) y que la venta se cobre al precio de hoy (#146).

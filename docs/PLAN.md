@@ -210,6 +210,12 @@ No incluido: código QR, redirección de direcciones viejas, carrito, vista prev
 - Pruebas: ningún endpoint público expone costo ni stock; una tienda inactiva no se muestra.
 - Listo cuando: comparto el enlace por WhatsApp, se ve la vista previa y el pedido llega armado.
 
+### M10b · Carrito y pedidos — **M** ✅ (2026-10-14, pedido del usuario)
+Hecho. Carrito en la tienda pública (vive en el navegador), pedido guardado en el panel + aviso por WhatsApp con el detalle,
+datos del cliente (nombre, celular, retiro o envío). Sección **Pedidos** en el panel: confirmar, entregar y cobrar (registra la
+venta y descuenta el stock) o cancelar. 19 pruebas + `scripts/e2e_pedidos.py` + e2e del panel. No incluido: pago en línea,
+costo de envío, cuenta del cliente, reservar stock al pedir.
+
 ### M11 · Lector de Instagram por reglas — **M** ✅ (2026-10-14)
 Hecho. El lector (lógica pura) entiende nombre, precio, ofertas, colores, tallas, stock, categoría por hashtag y carruseles, y
 **no inventa**: lo que no encuentra queda vacío y avisa. Cada producto va a una **bandeja de revisión**; nada llega al catálogo

@@ -273,3 +273,36 @@ public class CategoriaDuplicadaException : DominioException
     public CategoriaDuplicadaException(string nombre)
         : base($"Ya tenés una categoría llamada '{nombre}'.") { }
 }
+
+public class PedidoNoEncontradoException : DominioException
+{
+    public override int Status => 404;
+
+    public PedidoNoEncontradoException()
+        : base("No encontramos ese pedido.") { }
+}
+
+public class PedidoYaResueltoException : DominioException
+{
+    public override int Status => 409;
+
+    public PedidoYaResueltoException(string estado)
+        : base($"Este pedido ya está {estado}.") { }
+}
+
+// La tienda apagó "Recibir pedidos" o no tiene WhatsApp: el carrito no puede mandar nada.
+public class TiendaSinPedidosException : DominioException
+{
+    public override int Status => 409;
+
+    public TiendaSinPedidosException()
+        : base("Esta tienda no está recibiendo pedidos por acá. Escribile directamente.") { }
+}
+
+// Un producto del carrito ya no se puede pedir (agotado, oculto, archivado o la opción ya no existe).
+public class ProductoNoPedibleException : DominioException
+{
+    public override int Status => 409;
+
+    public ProductoNoPedibleException(string mensaje) : base(mensaje) { }
+}

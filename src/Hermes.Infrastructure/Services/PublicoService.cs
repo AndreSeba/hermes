@@ -1,3 +1,4 @@
+using Hermes.Application;
 using Hermes.Application.Dtos;
 using Hermes.Application.Exceptions;
 using Hermes.Application.Interfaces;
@@ -21,12 +22,14 @@ public class PublicoService : IPublicoService
     private readonly HermesDbContext _db;
     private readonly IAlmacenArchivos _almacen;
     private readonly TiendaPublicaContexto _contexto;
+    private readonly TimeProvider? _reloj;
 
-    public PublicoService(HermesDbContext db, IAlmacenArchivos almacen, TiendaPublicaContexto contexto)
+    public PublicoService(HermesDbContext db, IAlmacenArchivos almacen, TiendaPublicaContexto contexto, TimeProvider? reloj = null)
     {
         _db = db;
         _almacen = almacen;
         _contexto = contexto;
+        _reloj = reloj;
     }
 
     private async Task<Tienda> FijarTiendaAsync(string slug, CancellationToken ct)
@@ -145,6 +148,142 @@ public class PublicoService : IPublicoService
         return new ProductoPublicoDto(
             p.Id, p.Nombre, p.Descripcion, t.MostrarPrecios ? p.Precio : null,
             p.Categoria is { Activa: true } c ? c.Nombre : null, disponible, fotos, variantes);
+    }
+
+    // ───────────── Carrito y pedido ─────────────
+
+    public async Task<CarritoPublicoDto> RevisarCarritoAsync(string slug, RevisarCarritoDto dto, CancellationToken ct)
+    {
+        var t = await FijarTiendaAsync(slug, ct);
+        var ids = (dto.Variantes ?? []).Distinct().Take(Pedido.MaximoLineas).ToList();
+        var pedibles = await PediblesAsync(ids, ct);
+
+        var productoIds = pedibles.Values.Select(v => v.ProductoId).Distinct().ToList();
+        var portadas = await _db.ProductoFotos.AsNoTracking().Where(f => productoIds.Contains(f.ProductoId))
+            .GroupBy(f => f.ProductoId).Select(g => new { ProductoId = g.Key, ImagenId = g.OrderBy(f => f.Orden).Select(f => f.ImagenId).First() })
+            .ToDictionaryAsync(x => x.ProductoId, x => x.ImagenId, ct);
+        var imagenIds = portadas.Values.ToList();
+        var imagenes = await _db.Imagenes.AsNoTracking().Where(i => imagenIds.Contains(i.Id)).ToDictionaryAsync(i => i.Id, ct);
+        var conStock = t.MostrarDisponibilidad
+            ? await _db.PorVarianteAsync(pedibles.Values.Where(v => v.Producto!.ControlaStock).Select(v => v.Id).ToList(), ct)
+            : [];
+
+        var articulos = ids.Where(pedibles.ContainsKey).Select(id =>
+        {
+            var v = pedibles[id];
+            var p = v.Producto!;
+            var variante = string.Join(" · ", new[] { v.Color, v.Talla }.Where(s => s.Length > 0));
+            return new ArticuloCarritoDto(
+                v.Id, p.Id, p.Nombre, variante.Length > 0 ? variante : null, t.MostrarPrecios ? p.Precio : null,
+                t.MostrarDisponibilidad ? !p.ControlaStock || conStock.GetValueOrDefault(v.Id) > 0 : null,
+                portadas.TryGetValue(p.Id, out var img) && imagenes.TryGetValue(img, out var imagen) ? ImagenMapeo.ADto(_almacen, t.Id, imagen) : null);
+        }).ToList();
+
+        return new CarritoPublicoDto(articulos, RecibePedidos(t));
+    }
+
+    public async Task<PedidoEnviadoDto> PedirAsync(string slug, NuevoPedidoDto dto, CancellationToken ct)
+    {
+        var t = await FijarTiendaAsync(slug, ct);
+        if (!RecibePedidos(t)) throw new TiendaSinPedidosException();
+        if (dto.ClaveIdempotencia == Guid.Empty) throw new ValidacionException("Falta la clave del pedido.");
+
+        // Un reintento (doble toque, se cortó la conexión) devuelve el pedido que ya estaba, aunque llegue distinto.
+        if (await PorClaveAsync(dto.ClaveIdempotencia, ct) is { } previo) return Enviado(t, previo, nuevo: false);
+
+        var nombre = Validacion.Texto(dto.Nombre, 80, "Tu nombre");
+        var celular = Validacion.Whatsapp(dto.Celular)
+            ?? throw new ValidacionException("Escribí tu celular para que la tienda te pueda responder.");
+        if (!Enum.IsDefined(dto.Entrega)) throw new ValidacionException("Elegí si lo retirás o te lo envían.");
+        string? direccion = null, referencia = null;
+        if (dto.Entrega == EntregaPedido.Envio)
+        {
+            direccion = Validacion.Texto(dto.Direccion, 200, "La dirección de entrega");
+            referencia = Validacion.TextoOpcional(dto.Referencia, 200, "La referencia");
+        }
+        var nota = Validacion.TextoOpcional(dto.Nota, 300, "La nota");
+
+        // La misma variante dos veces se junta en una línea, en el orden en que apareció primero.
+        var articulos = (dto.Articulos ?? []).GroupBy(a => a.VarianteId)
+            .Select(g => (VarianteId: g.Key, Unidades: g.Sum(a => (long)a.Unidades), Primera: g.First())).ToList();
+        if (articulos.Count == 0) throw new ValidacionException("Tu carrito está vacío.");
+        if (articulos.Count > Pedido.MaximoLineas) throw new ValidacionException($"Podés pedir hasta {Pedido.MaximoLineas} productos distintos por pedido.");
+        if (articulos.Any(a => a.Unidades < 1 || a.Unidades > Pedido.MaximoCantidad))
+            throw new ValidacionException($"Podés pedir de 1 a {Pedido.MaximoCantidad} unidades de cada producto.");
+
+        var pedibles = await PediblesAsync(articulos.Select(a => a.VarianteId).ToList(), ct);
+        if (articulos.Any(a => !pedibles.ContainsKey(a.VarianteId)))
+            throw new ProductoNoPedibleException("Algo de tu carrito ya no está a la venta. Volvé a abrir el carrito para ver qué cambió.");
+
+        // Solo se rechaza lo AGOTADO y solo si la tienda muestra la disponibilidad (si la oculta, no se revela así). No se
+        // compara con las unidades pedidas: eso dejaría adivinar el stock exacto. Lo resuelve la dueña al confirmar.
+        if (t.MostrarDisponibilidad)
+        {
+            var controladas = pedibles.Values.Where(v => v.Producto!.ControlaStock).Select(v => v.Id).ToList();
+            var stock = await _db.PorVarianteAsync(controladas, ct);
+            var agotada = controladas.FirstOrDefault(id => stock.GetValueOrDefault(id) <= 0);
+            if (agotada != Guid.Empty)
+                throw new ProductoNoPedibleException($"«{Descripcion(pedibles[agotada])}» se agotó. Sacalo del carrito y probá de nuevo.");
+        }
+
+        var ahora = (_reloj ?? TimeProvider.System).GetUtcNow().UtcDateTime;
+        try
+        {
+            await using var tx = await _db.Database.BeginTransactionAsync(ct);
+            // Correlativo por tienda: se toma el candado de la fila de la tienda (un UPDATE que no cambia nada, como el
+            // candado por variante del stock) y RECIÉN DESPUÉS se lee el último número. Dos pedidos a la vez esperan en fila:
+            // sin el candado, 8 simultáneos chocaban en el índice único (lo encontró la prueba con Postgres).
+            var tiendaId = t.Id;
+            await _db.Tiendas.Where(x => x.Id == tiendaId).ExecuteUpdateAsync(s => s.SetProperty(x => x.Slug, x => x.Slug), ct);
+            var numero = (await _db.Pedidos.MaxAsync(p => (int?)p.Numero, ct) ?? 0) + 1;
+            var pedido = new Pedido
+            {
+                Numero = numero, ClaveIdempotencia = dto.ClaveIdempotencia, Fecha = ahora,
+                ClienteNombre = nombre, ClienteCelular = celular, Entrega = dto.Entrega, Direccion = direccion, Referencia = referencia, Nota = nota,
+                Lineas = articulos.Select((a, i) => new PedidoLinea
+                {
+                    ProductoId = pedibles[a.VarianteId].ProductoId, VarianteId = a.VarianteId, Descripcion = Descripcion(pedibles[a.VarianteId]),
+                    Cantidad = (int)a.Unidades, PrecioUnitario = pedibles[a.VarianteId].Producto!.Precio, Orden = i,
+                }).ToList(),
+            };
+            _db.Pedidos.Add(pedido);
+            await _db.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+            return Enviado(t, pedido, nuevo: true);
+        }
+        catch (DbUpdateException)
+        {
+            // La misma clave llegó dos veces a la vez: el índice único (TiendaId, ClaveIdempotencia) dejó pasar a una.
+            _db.ChangeTracker.Clear();
+            if (await PorClaveAsync(dto.ClaveIdempotencia, ct) is { } ganador) return Enviado(t, ganador, nuevo: false);
+            throw;
+        }
+    }
+
+    private static bool RecibePedidos(Tienda t) => t.PedidosPorWhatsapp && t.Whatsapp is not null;
+
+    // Variantes ACTIVAS de productos no archivados y visibles (el filtro global ya deja solo las de esta tienda).
+    private async Task<Dictionary<Guid, Variante>> PediblesAsync(List<Guid> ids, CancellationToken ct)
+        => await _db.Variantes.AsNoTracking().Include(v => v.Producto)
+            .Where(v => ids.Contains(v.Id) && v.Activa && !v.Producto!.Archivado && v.Producto.VisibleEnTienda)
+            .ToDictionaryAsync(v => v.Id, ct);
+
+    private async Task<Pedido?> PorClaveAsync(Guid clave, CancellationToken ct)
+        => await _db.Pedidos.AsNoTracking().Include(p => p.Lineas).FirstOrDefaultAsync(p => p.ClaveIdempotencia == clave, ct);
+
+    // "Cartera (café · M)", igual que en las ventas.
+    private static string Descripcion(Variante v)
+    {
+        var variante = string.Join(" · ", new[] { v.Color, v.Talla }.Where(s => s.Length > 0));
+        return variante.Length > 0 ? $"{v.Producto!.Nombre} ({variante})" : v.Producto!.Nombre;
+    }
+
+    private static PedidoEnviadoDto Enviado(Tienda t, Pedido p, bool nuevo)
+    {
+        var lineas = p.Lineas.OrderBy(l => l.Orden)
+            .Select(l => new LineaPedidoPublicaDto(l.Descripcion, l.Cantidad, t.MostrarPrecios ? l.PrecioUnitario : null)).ToList();
+        decimal? total = t.MostrarPrecios ? p.Lineas.Sum(l => l.PrecioUnitario * l.Cantidad) : null;
+        return new PedidoEnviadoDto(t.Nombre, p.Numero, lineas, total, p.ClienteNombre, p.Entrega, p.Direccion, t.Whatsapp!, nuevo);
     }
 
     // ───────────── Interno ─────────────

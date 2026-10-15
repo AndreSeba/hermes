@@ -1,3 +1,4 @@
+using Hermes.Domain.Entities;
 using Hermes.Domain.Enums;
 
 namespace Hermes.Application.Dtos;
@@ -32,3 +33,30 @@ public record FiltroPublicoDto(string? Buscar = null, Guid? CategoriaId = null, 
 
 // Lo disponible primero y los agotados al final. Siguiente: cursor opaco.
 public record PaginaPublicaDto(IReadOnlyList<ProductoPublicoResumenDto> Items, string? Siguiente);
+
+// ───────────── Carrito y pedido (el carrito vive en el navegador; acá se revisa y se manda) ─────────────
+// OJO: "Unidades" y no "Cantidad" a propósito: la prueba de "lo que nunca sale" prohíbe esa palabra en todo DTO público
+// (para que nunca se cuele el stock). Las unidades acá son las que pide el cliente, no las que hay.
+
+// Las variantes que el cliente tiene en su carrito (como mucho Pedido.MaximoLineas).
+public record RevisarCarritoDto(IReadOnlyList<Guid> Variantes);
+
+// Cómo está HOY cada cosa del carrito: nombre, precio (null si la tienda no los muestra) y si se puede pedir (null si no
+// muestra disponibilidad). Lo que ya no existe, se archivó o se ocultó no vuelve: el navegador lo saca del carrito.
+public record ArticuloCarritoDto(Guid VarianteId, Guid ProductoId, string Nombre, string? Variante, decimal? Precio, bool? Disponible, ImagenDto? Foto);
+
+public record CarritoPublicoDto(IReadOnlyList<ArticuloCarritoDto> Articulos, bool RecibePedidos);
+
+public record ArticuloPedidoDto(Guid VarianteId, int Unidades);
+
+// Entrega = Retiro o Envio (con Direccion). Celular: de Bolivia, se guarda "+591XXXXXXXX".
+public record NuevoPedidoDto(
+    Guid ClaveIdempotencia, IReadOnlyList<ArticuloPedidoDto> Articulos, string Nombre, string Celular,
+    EntregaPedido Entrega, string? Direccion, string? Referencia, string? Nota);
+
+public record LineaPedidoPublicaDto(string Descripcion, int Unidades, decimal? Precio);
+
+// Lo que ve el cliente después de pedir (y con qué arma el mensaje de WhatsApp). Nuevo = false: era un reintento.
+public record PedidoEnviadoDto(
+    string Tienda, int Numero, IReadOnlyList<LineaPedidoPublicaDto> Lineas, decimal? Total,
+    string Nombre, EntregaPedido Entrega, string? Direccion, string Whatsapp, bool Nuevo);

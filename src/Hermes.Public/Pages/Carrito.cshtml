@@ -1,0 +1,75 @@
+@page "/{slug}/carrito"
+@model CarritoModel
+@{
+    var t = Model.Tienda;
+}
+<header class="cabecera cabecera-chica">
+    <a class="volver" href="/@t.Slug" aria-label="Volver a @t.Nombre">←</a>
+    <a class="cabecera-nombre" href="/@t.Slug">@t.Nombre</a>
+</header>
+
+<main class="contenido carrito" id="carrito" data-slug="@t.Slug" data-precios="@(t.MostrarPrecios ? "si" : "no")" data-recibe="@(Model.RecibePedidos ? "si" : "no")">
+    <h1>Tu carrito</h1>
+
+    @if (!Model.RecibePedidos)
+    {
+        <p class="aviso-agotado">Esta tienda no está recibiendo pedidos por acá. Escribile directamente.</p>
+    }
+    else
+    {
+        <noscript><p class="aviso-agotado">Para usar el carrito hace falta JavaScript. También podés pedir cada producto por WhatsApp desde su página.</p></noscript>
+        <p id="carrito-cargando" class="vacio" role="status">Cargando tu carrito…</p>
+        <p id="carrito-aviso" class="aviso-agotado" role="status" hidden></p>
+
+        <div id="carrito-vacio" class="vacio" hidden>
+            <p>Tu carrito está vacío.</p>
+            <a class="boton" href="/@t.Slug">Ver productos</a>
+        </div>
+
+        <ul id="carrito-lista" class="lineas" aria-label="Productos del carrito"></ul>
+        <p id="carrito-total" class="total" hidden></p>
+
+        <form id="checkout" class="checkout" novalidate hidden>
+            <h2>Tus datos</h2>
+            <label class="campo">Tu nombre
+                <input name="nombre" maxlength="80" autocomplete="name" required />
+            </label>
+            <label class="campo">Tu celular (WhatsApp)
+                <input name="celular" type="tel" inputmode="tel" autocomplete="tel" placeholder="7XXXXXXX" required />
+            </label>
+            <fieldset class="opciones">
+                <legend>¿Cómo lo recibís?</legend>
+                <label class="variante"><input type="radio" name="entrega" value="Retiro" checked /><span>Paso a retirarlo</span></label>
+                <label class="variante"><input type="radio" name="entrega" value="Envio" /><span>Envío a domicilio</span></label>
+            </fieldset>
+            <div id="datos-envio" class="datos-envio" hidden>
+                <label class="campo">Dirección de entrega
+                    <input name="direccion" maxlength="200" autocomplete="street-address" />
+                </label>
+                <label class="campo">Referencia (opcional)
+                    <input name="referencia" maxlength="200" placeholder="Casa verde, frente a la plaza" />
+                </label>
+            </div>
+            <label class="campo">Nota para la tienda (opcional)
+                <textarea name="nota" maxlength="300" rows="2"></textarea>
+            </label>
+            @* Campo trampa para robots: invisible para las personas. *@
+            <div class="sr-only" aria-hidden="true">
+                <label>No completar <input name="sitio" tabindex="-1" autocomplete="off" /></label>
+            </div>
+
+            <p id="checkout-error" class="error-form" role="alert" hidden></p>
+            <button type="submit" class="boton boton-grande">Enviar pedido</button>
+            <p class="nota">La tienda recibe tu pedido y te confirma por WhatsApp la entrega y el pago.</p>
+        </form>
+
+        <section id="enviado" class="enviado" hidden>
+            <h2 id="enviado-titulo">¡Pedido enviado!</h2>
+            <p>La tienda ya lo tiene. Avisale por WhatsApp para que lo vea al toque:</p>
+            <a id="enviado-wa" class="boton boton-wa boton-grande" href="#" target="_blank" rel="noopener noreferrer">Avisar por WhatsApp</a>
+            <a class="boton boton-claro boton-grande" href="/@t.Slug">Seguir mirando</a>
+        </section>
+    }
+</main>
+
+<script src="/js/publico.js" defer></script>

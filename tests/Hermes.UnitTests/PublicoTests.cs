@@ -298,6 +298,8 @@ public class PublicoTests : IDisposable
         {
             typeof(TiendaPublicaDto), typeof(CategoriaPublicaDto), typeof(ProductoPublicoResumenDto), typeof(VariantePublicaDto),
             typeof(ProductoPublicoDto), typeof(PaginaPublicaDto), typeof(FiltroPublicoDto),
+            typeof(RevisarCarritoDto), typeof(ArticuloCarritoDto), typeof(CarritoPublicoDto), typeof(ArticuloPedidoDto),
+            typeof(NuevoPedidoDto), typeof(LineaPedidoPublicaDto), typeof(PedidoEnviadoDto),
         };
 
         var vistos = new HashSet<Type>();

@@ -628,6 +628,169 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Hermes.Domain.Entities.Pedido", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("ClaveIdempotencia")
+                        .HasColumnType("uuid")
+                        .HasColumnName("clave_idempotencia");
+
+                    b.Property<string>("ClienteCelular")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("cliente_celular");
+
+                    b.Property<string>("ClienteNombre")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("cliente_nombre");
+
+                    b.Property<string>("Direccion")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("direccion");
+
+                    b.Property<string>("Entrega")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)")
+                        .HasColumnName("entrega");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("character varying(12)")
+                        .HasColumnName("estado");
+
+                    b.Property<DateTime>("Fecha")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("fecha");
+
+                    b.Property<string>("MotivoCancelacion")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("motivo_cancelacion");
+
+                    b.Property<string>("Nota")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("nota");
+
+                    b.Property<int>("Numero")
+                        .HasColumnType("integer")
+                        .HasColumnName("numero");
+
+                    b.Property<string>("Referencia")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("referencia");
+
+                    b.Property<DateTime?>("ResueltoEn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("resuelto_en");
+
+                    b.Property<Guid>("TiendaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tienda_id");
+
+                    b.Property<Guid?>("VentaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("venta_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_pedidos");
+
+                    b.HasIndex("VentaId")
+                        .HasDatabaseName("ix_pedidos_venta_id");
+
+                    b.HasIndex("TiendaId", "ClaveIdempotencia")
+                        .IsUnique()
+                        .HasDatabaseName("ix_pedidos_tienda_id_clave_idempotencia");
+
+                    b.HasIndex("TiendaId", "Estado")
+                        .HasDatabaseName("ix_pedidos_tienda_id_estado");
+
+                    b.HasIndex("TiendaId", "Numero")
+                        .IsUnique()
+                        .HasDatabaseName("ix_pedidos_tienda_id_numero");
+
+                    b.ToTable("pedidos", "hermes", t =>
+                        {
+                            t.HasCheckConstraint("ck_pedido_numero", "numero > 0");
+                        });
+                });
+
+            modelBuilder.Entity("Hermes.Domain.Entities.PedidoLinea", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("Cantidad")
+                        .HasColumnType("integer")
+                        .HasColumnName("cantidad");
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("descripcion");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("integer")
+                        .HasColumnName("orden");
+
+                    b.Property<Guid>("PedidoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("pedido_id");
+
+                    b.Property<decimal>("PrecioUnitario")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("precio_unitario");
+
+                    b.Property<Guid>("ProductoId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("producto_id");
+
+                    b.Property<Guid>("TiendaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tienda_id");
+
+                    b.Property<Guid>("VarianteId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("variante_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_pedido_lineas");
+
+                    b.HasIndex("PedidoId")
+                        .HasDatabaseName("ix_pedido_lineas_pedido_id");
+
+                    b.HasIndex("ProductoId")
+                        .HasDatabaseName("ix_pedido_lineas_producto_id");
+
+                    b.HasIndex("TiendaId")
+                        .HasDatabaseName("ix_pedido_lineas_tienda_id");
+
+                    b.HasIndex("VarianteId")
+                        .HasDatabaseName("ix_pedido_lineas_variante_id");
+
+                    b.ToTable("pedido_lineas", "hermes", t =>
+                        {
+                            t.HasCheckConstraint("ck_pedido_linea_cantidad", "cantidad > 0");
+
+                            t.HasCheckConstraint("ck_pedido_linea_precio", "precio_unitario > 0");
+                        });
+                });
+
             modelBuilder.Entity("Hermes.Domain.Entities.Plan", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1466,6 +1629,55 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                     b.Navigation("Plan");
                 });
 
+            modelBuilder.Entity("Hermes.Domain.Entities.Pedido", b =>
+                {
+                    b.HasOne("Hermes.Domain.Entities.Tienda", null)
+                        .WithMany()
+                        .HasForeignKey("TiendaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_pedidos_tiendas_tienda_id");
+
+                    b.HasOne("Hermes.Domain.Entities.Venta", null)
+                        .WithMany()
+                        .HasForeignKey("VentaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_pedidos_ventas_venta_id");
+                });
+
+            modelBuilder.Entity("Hermes.Domain.Entities.PedidoLinea", b =>
+                {
+                    b.HasOne("Hermes.Domain.Entities.Pedido", "Pedido")
+                        .WithMany("Lineas")
+                        .HasForeignKey("PedidoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_pedido_lineas_pedidos_pedido_id");
+
+                    b.HasOne("Hermes.Domain.Entities.Producto", null)
+                        .WithMany()
+                        .HasForeignKey("ProductoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_pedido_lineas_productos_producto_id");
+
+                    b.HasOne("Hermes.Domain.Entities.Tienda", null)
+                        .WithMany()
+                        .HasForeignKey("TiendaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_pedido_lineas_tiendas_tienda_id");
+
+                    b.HasOne("Hermes.Domain.Entities.Variante", null)
+                        .WithMany()
+                        .HasForeignKey("VarianteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_pedido_lineas_variantes_variante_id");
+
+                    b.Navigation("Pedido");
+                });
+
             modelBuilder.Entity("Hermes.Domain.Entities.Producto", b =>
                 {
                     b.HasOne("Hermes.Domain.Entities.Categoria", "Categoria")
@@ -1645,6 +1857,11 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                 });
 
             modelBuilder.Entity("Hermes.Domain.Entities.Compra", b =>
+                {
+                    b.Navigation("Lineas");
+                });
+
+            modelBuilder.Entity("Hermes.Domain.Entities.Pedido", b =>
                 {
                     b.Navigation("Lineas");
                 });

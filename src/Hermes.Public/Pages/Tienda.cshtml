@@ -20,6 +20,7 @@
             <p class="descripcion">@t.Descripcion</p>
         }
     </div>
+    @await Html.PartialAsync("_EnlaceCarrito", t)
 </header>
 
 <main class="contenido">
@@ -89,3 +90,5 @@
         <a class="boton boton-wa" href="@Formato.EnlaceWhatsapp(wa, $"Hola {t.Nombre}! Vi tu tienda y quería hacerte una consulta.")" target="_blank" rel="noopener noreferrer">Escribinos por WhatsApp</a>
     </footer>
 }
+
+<script src="/js/publico.js" defer></script>

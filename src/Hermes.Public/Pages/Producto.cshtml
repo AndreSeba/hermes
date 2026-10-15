@@ -7,6 +7,7 @@
 <header class="cabecera cabecera-chica">
     <a class="volver" href="/@t.Slug" aria-label="Volver a @t.Nombre">←</a>
     <a class="cabecera-nombre" href="/@t.Slug">@t.Nombre</a>
+    @await Html.PartialAsync("_EnlaceCarrito", t)
 </header>
 
 <main class="producto">
@@ -51,7 +52,8 @@
 
         <form class="pedido" id="pedido"
               data-tienda="@t.Nombre" data-producto="@p.Nombre" data-precio="@(p.Precio?.ToString(System.Globalization.CultureInfo.InvariantCulture))"
-              data-direccion="@Model.DireccionDeProducto" data-wa="@t.Whatsapp">
+              data-direccion="@Model.DireccionDeProducto" data-wa="@t.Whatsapp"
+              data-slug="@t.Slug" data-producto-id="@p.Id" data-variante-unica="@(Model.ConVariantes ? "" : Model.VarianteInicial?.Id.ToString())">
             @if (Model.ConVariantes)
             {
                 <fieldset class="variantes">
@@ -75,8 +77,11 @@
                     <output id="cantidad" aria-live="polite">1</output>
                     <button type="button" id="mas" aria-label="Una más">+</button>
                 </div>
+                @* Sin JavaScript no hay carrito: queda solo el pedido directo por WhatsApp (publico.js muestra el botón). *@
+                <button type="button" id="agregar" class="boton boton-grande" hidden>Agregar al carrito</button>
+                <p id="agregado" class="agregado" role="status" hidden>Agregado. <a href="/@t.Slug/carrito">Ver carrito</a></p>
                 <a id="pedir" class="boton boton-wa boton-grande" href="@Model.EnlacePedido" target="_blank" rel="noopener noreferrer">Pedir por WhatsApp</a>
-                <p class="nota">Se abre WhatsApp con tu pedido ya escrito: lo mandás y te respondemos.</p>
+                <p class="nota" id="nota-pedir">Se abre WhatsApp con tu pedido ya escrito: lo mandás y te respondemos.</p>
             }
         </form>
     </section>

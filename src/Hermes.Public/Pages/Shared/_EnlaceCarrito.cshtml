@@ -1,0 +1,9 @@
+@model TiendaPublicaDto
+@* El enlace al carrito de la cabecera. Solo si la tienda recibe pedidos; publico.js lo muestra (sin JavaScript no hay
+   carrito) y le pone cuántas unidades hay. *@
+@if (Model.Whatsapp is not null)
+{
+    <a class="ir-carrito" href="/@Model.Slug/carrito" data-carrito="@Model.Slug" hidden>
+        <span aria-hidden="true">🛒</span> Carrito <span class="contador" data-contador></span>
+    </a>
+}

@@ -36,6 +36,7 @@ public static class DependencyInjection
         services.AddScoped<IOperacionesStock, OperacionesStock>();
         services.AddScoped<IStockService, StockService>();
         services.AddScoped<IVentaService, VentaService>();
+        services.AddScoped<IPedidoService, PedidoService>();
         services.Configure<Planes.PlanesOptions>(configuration.GetSection(Planes.PlanesOptions.SectionName));
         services.AddScoped<Planes.PlanesDeTienda>();
         services.AddScoped<ILimitesDePlan, Planes.LimitesDePlan>();

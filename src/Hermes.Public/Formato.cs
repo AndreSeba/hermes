@@ -20,6 +20,16 @@ public static class Formato
         return $"Hola {tienda}! Quiero pedir: {cantidad} × {producto}{detalle}{total}. Lo vi en {direccion}";
     }
 
+    // El mensaje con el que el cliente avisa por WhatsApp el pedido que hizo desde el carrito (ya quedó guardado en el panel).
+    public static string MensajeDeCarrito(Application.Dtos.PedidoEnviadoDto p)
+    {
+        var lineas = string.Join("\n", p.Lineas.Select(l =>
+            $"• {l.Unidades} × {l.Descripcion}" + (l.Precio is { } precio ? $" — {Bs(precio * l.Unidades)}" : string.Empty)));
+        var total = p.Total is { } t ? $"\nTotal: {Bs(t)}" : string.Empty;
+        var entrega = p.Entrega == Domain.Entities.EntregaPedido.Envio ? $"Envío a: {p.Direccion}" : "Paso a retirarlo.";
+        return $"Hola {p.Tienda}! Te hice el pedido #{p.Numero} desde tu tienda:\n{lineas}{total}\n{entrega}\nSoy {p.Nombre}.";
+    }
+
     public static string EnlaceWhatsapp(string telefono, string mensaje)
         => $"https://wa.me/{new string(telefono.Where(char.IsDigit).ToArray())}?text={Uri.EscapeDataString(mensaje)}";
 }

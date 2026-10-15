@@ -32,4 +32,5 @@ public record InicioDto(
     decimal Gastos, int? PorcentajeCubierto, decimal Resultado,
     decimal PorPagar, int EnCamino,
     int Agotados, int PorAgotarse, IReadOnlyList<ProductoParaReponerDto> ParaReponer,
-    IReadOnlyList<ActividadDto> Recientes);
+    IReadOnlyList<ActividadDto> Recientes,
+    int PedidosPendientes = 0); // del carrito de la tienda pública: Nuevos + Confirmados, sin importar el período
