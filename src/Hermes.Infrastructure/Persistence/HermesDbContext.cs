@@ -38,6 +38,9 @@ public class HermesDbContext : DbContext
     public DbSet<Suscripcion> Suscripciones => Set<Suscripcion>();
     public DbSet<PagoPlan> PagosPlan => Set<PagoPlan>();
     public DbSet<Borrador> Borradores => Set<Borrador>();
+    public DbSet<BorradorFoto> BorradorFotos => Set<BorradorFoto>();
+    public DbSet<InstagramConexion> InstagramConexiones => Set<InstagramConexion>();
+    public DbSet<InstagramPublicacion> InstagramPublicaciones => Set<InstagramPublicacion>();
     public DbSet<Gasto> Gastos => Set<Gasto>();
     public DbSet<Costeo> Costeos => Set<Costeo>();
     public DbSet<Proveedor> Proveedores => Set<Proveedor>();

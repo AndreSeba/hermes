@@ -61,6 +61,11 @@ public static class DependencyInjection
         services.AddScoped<IPlanService, Planes.PlanService>();
         services.AddScoped<IAdminService, Planes.AdminService>();
         services.AddScoped<IInstagramService, InstagramService>();
+        // M12: la conexión con la cuenta de Instagram (Meta). Sin la sección "Instagram" configurada queda apagada.
+        services.Configure<Instagram.InstagramOptions>(configuration.GetSection(Instagram.InstagramOptions.SectionName));
+        services.AddSingleton<Instagram.SecretosInstagram>();
+        services.AddHttpClient<Instagram.IClienteInstagram, Instagram.ClienteInstagramGraph>(c => c.Timeout = TimeSpan.FromSeconds(30));
+        services.AddScoped<IInstagramConexionService, Instagram.InstagramConexionService>();
         services.AddScoped<TiendaPublicaContexto>();
         services.AddScoped<IPublicoService, PublicoService>();
         services.AddScoped<IGastoService, GastoService>();

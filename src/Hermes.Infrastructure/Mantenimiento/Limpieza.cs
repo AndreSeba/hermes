@@ -60,6 +60,8 @@ public class Limpieza
         var huerfanas = await _db.Imagenes.IgnoreQueryFilters()
             .Where(i => i.Id.CompareTo(corteFotos) < 0
                 && !_db.ProductoFotos.IgnoreQueryFilters().Any(f => f.ImagenId == i.Id)
+                // Las de un borrador de Instagram que todavía espera en la bandeja (M12); si se descartó, ya no sirven.
+                && !_db.BorradorFotos.IgnoreQueryFilters().Any(f => f.ImagenId == i.Id && f.Borrador!.Estado == EstadoBorrador.Pendiente)
                 && !_db.Tiendas.Any(t => t.LogoImagenId == i.Id)
                 && !_db.PagosPlan.Any(p => p.ComprobanteImagenId == i.Id))
             .OrderBy(i => i.Id).Take(_opciones.MaximoFotosPorVuelta)

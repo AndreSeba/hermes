@@ -119,6 +119,31 @@ restauró no es un respaldo.
 La API corre cada hora (`Limpieza__*`): borra los refresh tokens vencidos y las fotos que nadie usa (subidas hace más de 24 h
 que no quedaron en ningún producto, logo ni comprobante). Con varias instancias de la API, dejarla encendida en una sola.
 
+## Conectar con Instagram (M12)
+
+Sin esto, todo funciona y las dueñas pegan el texto de sus publicaciones a mano. Para que las publicaciones lleguen solas
+hace falta una **app de Meta** (gratis). Según la documentación de Meta (octubre de 2026; **verificar en el panel de Meta**,
+cambia seguido):
+
+1. En [developers.facebook.com](https://developers.facebook.com) crear una app (tipo *Business*) y agregarle el producto
+   **Instagram → "API con inicio de sesión de Instagram"** (*Instagram API with Instagram Login*: no necesita página de Facebook).
+2. En la configuración de ese producto:
+   - **Valid OAuth Redirect URIs**: `https://panel.midominio.com/instagram/conectado` (exacto).
+   - Permiso: `instagram_business_basic` (solo leer el perfil y las publicaciones).
+   - Copiar el **Instagram App ID** y el **Instagram App Secret** a `.env` (`INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`) y generar
+     `INSTAGRAM_CLAVE_CIFRADO` (`openssl rand -base64 32`).
+3. **Mientras la app no pase la revisión de Meta** ("Standard Access") solo se pueden conectar las cuentas que vos agregues a la
+   app como **evaluadoras/testers de Instagram** (y que acepten la invitación desde Instagram). Para que cualquier tienda pueda
+   conectar su cuenta hace falta **"Advanced Access"**: pedir la **revisión de la app** (App Review) para
+   `instagram_business_basic`, con un video mostrando el uso y la política de privacidad publicada (`/privacidad`). Meta puede
+   pedir además la **verificación del negocio**.
+4. Las cuentas que se conectan tienen que ser **profesionales** (empresa o creador). Una personal se pasa gratis desde la app de
+   Instagram (Configuración → Tipo de cuenta).
+
+La API trae lo nuevo cada 30 minutos (`Instagram__IntervaloMinutos`) y renueva sola el permiso de 60 días. Todo esto se probó
+contra un Meta FALSO que imita las respuestas documentadas (`scripts/meta_falso.py`); **la primera conexión real hay que
+mirarla con calma** (`docker compose logs -f api`).
+
 ## Más adelante
 
 - **Fotos a Cloudflare R2** cuando haya muchas tiendas (ver `Almacenamiento:Tipo` en CLAUDE.md): hoy viven en Postgres y entran

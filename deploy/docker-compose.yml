@@ -53,6 +53,11 @@ services:
       ConnectionStrings__HermesDbMigraciones: Host=postgres;Port=5432;Database=hermes;Username=hermes;Password=${POSTGRES_PASSWORD}
       Base__MigrarAlArrancar: "true"
       CorsOrigenesPermitidos__0: https://${DOMINIO_PANEL}
+      # Conexión con Instagram (M12). Vacío = apagada (las dueñas pegan el texto a mano). Ver docs/DESPLIEGUE.md.
+      Instagram__AppId: ${INSTAGRAM_APP_ID:-}
+      Instagram__AppSecret: ${INSTAGRAM_APP_SECRET:-}
+      Instagram__ClaveCifrado: ${INSTAGRAM_CLAVE_CIFRADO:-}
+      Instagram__RedirectUri: https://${DOMINIO_PANEL}/instagram/conectado
       Planes__PlanSinSuscripcion: gratis
       Planes__InstruccionesDePago: ${INSTRUCCIONES_DE_PAGO:-Pagá por QR o transferencia y subí la foto del comprobante.}
 

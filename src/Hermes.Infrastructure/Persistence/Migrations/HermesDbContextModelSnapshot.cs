@@ -88,11 +88,21 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(1000)")
                         .HasColumnName("descripcion");
 
+                    b.Property<string>("Enlace")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("enlace");
+
                     b.Property<string>("Estado")
                         .IsRequired()
                         .HasMaxLength(12)
                         .HasColumnType("character varying(12)")
                         .HasColumnName("estado");
+
+                    b.Property<string>("InstagramMediaId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("instagram_media_id");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
@@ -154,6 +164,44 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_borradores_tienda_id_estado_id");
 
                     b.ToTable("borradores", "hermes");
+                });
+
+            modelBuilder.Entity("Hermes.Domain.Entities.BorradorFoto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BorradorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("borrador_id");
+
+                    b.Property<Guid>("ImagenId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("imagen_id");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("integer")
+                        .HasColumnName("orden");
+
+                    b.Property<Guid>("TiendaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tienda_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_borrador_fotos");
+
+                    b.HasIndex("BorradorId")
+                        .HasDatabaseName("ix_borrador_fotos_borrador_id");
+
+                    b.HasIndex("ImagenId")
+                        .HasDatabaseName("ix_borrador_fotos_imagen_id");
+
+                    b.HasIndex("TiendaId")
+                        .HasDatabaseName("ix_borrador_fotos_tienda_id");
+
+                    b.ToTable("borrador_fotos", "hermes");
                 });
 
             modelBuilder.Entity("Hermes.Domain.Entities.Categoria", b =>
@@ -470,6 +518,118 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_imagenes_tienda_id");
 
                     b.ToTable("imagenes", "hermes");
+                });
+
+            modelBuilder.Entity("Hermes.Domain.Entities.InstagramConexion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("Activa")
+                        .HasColumnType("boolean")
+                        .HasColumnName("activa");
+
+                    b.Property<DateTime>("ConectadaEn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("conectada_en");
+
+                    b.Property<string>("IgUsuarioId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("ig_usuario_id");
+
+                    b.Property<bool>("NecesitaReconectar")
+                        .HasColumnType("boolean")
+                        .HasColumnName("necesita_reconectar");
+
+                    b.Property<Guid>("TiendaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tienda_id");
+
+                    b.Property<string>("TokenCifrado")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("token_cifrado");
+
+                    b.Property<DateTime>("TokenRenovado")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("token_renovado");
+
+                    b.Property<DateTime>("TokenVence")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("token_vence");
+
+                    b.Property<DateTime?>("UltimaSincronizacion")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ultima_sincronizacion");
+
+                    b.Property<string>("UltimoError")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("ultimo_error");
+
+                    b.Property<string>("Usuario")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("usuario");
+
+                    b.HasKey("Id")
+                        .HasName("pk_instagram_conexiones");
+
+                    b.HasIndex("TiendaId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_instagram_conexiones_tienda_id");
+
+                    b.ToTable("instagram_conexiones", "hermes");
+                });
+
+            modelBuilder.Entity("Hermes.Domain.Entities.InstagramPublicacion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Enlace")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("enlace");
+
+                    b.Property<DateTime>("ImportadaEn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("importada_en");
+
+                    b.Property<string>("MediaId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("media_id");
+
+                    b.Property<int>("Productos")
+                        .HasColumnType("integer")
+                        .HasColumnName("productos");
+
+                    b.Property<DateTime>("PublicadaEn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("publicada_en");
+
+                    b.Property<Guid>("TiendaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tienda_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_instagram_publicaciones");
+
+                    b.HasIndex("TiendaId", "MediaId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_instagram_publicaciones_tienda_id_media_id");
+
+                    b.ToTable("instagram_publicaciones", "hermes");
                 });
 
             modelBuilder.Entity("Hermes.Domain.Entities.MovimientoStock", b =>
@@ -1474,6 +1634,32 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_borradores_tiendas_tienda_id");
                 });
 
+            modelBuilder.Entity("Hermes.Domain.Entities.BorradorFoto", b =>
+                {
+                    b.HasOne("Hermes.Domain.Entities.Borrador", "Borrador")
+                        .WithMany("Fotos")
+                        .HasForeignKey("BorradorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_borrador_fotos_borradores_borrador_id");
+
+                    b.HasOne("Hermes.Domain.Entities.Imagen", null)
+                        .WithMany()
+                        .HasForeignKey("ImagenId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_borrador_fotos_imagenes_imagen_id");
+
+                    b.HasOne("Hermes.Domain.Entities.Tienda", null)
+                        .WithMany()
+                        .HasForeignKey("TiendaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_borrador_fotos_tiendas_tienda_id");
+
+                    b.Navigation("Borrador");
+                });
+
             modelBuilder.Entity("Hermes.Domain.Entities.Categoria", b =>
                 {
                     b.HasOne("Hermes.Domain.Entities.Tienda", null)
@@ -1571,6 +1757,26 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_imagenes_tiendas_tienda_id");
+                });
+
+            modelBuilder.Entity("Hermes.Domain.Entities.InstagramConexion", b =>
+                {
+                    b.HasOne("Hermes.Domain.Entities.Tienda", null)
+                        .WithMany()
+                        .HasForeignKey("TiendaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_instagram_conexiones_tiendas_tienda_id");
+                });
+
+            modelBuilder.Entity("Hermes.Domain.Entities.InstagramPublicacion", b =>
+                {
+                    b.HasOne("Hermes.Domain.Entities.Tienda", null)
+                        .WithMany()
+                        .HasForeignKey("TiendaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_instagram_publicaciones_tiendas_tienda_id");
                 });
 
             modelBuilder.Entity("Hermes.Domain.Entities.MovimientoStock", b =>
@@ -1854,6 +2060,11 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_venta_lineas_ventas_venta_id");
 
                     b.Navigation("Venta");
+                });
+
+            modelBuilder.Entity("Hermes.Domain.Entities.Borrador", b =>
+                {
+                    b.Navigation("Fotos");
                 });
 
             modelBuilder.Entity("Hermes.Domain.Entities.Compra", b =>

@@ -20,6 +20,8 @@ public class BorradorConfiguration : IEntityTypeConfiguration<Borrador>
         builder.Property(b => b.Categoria).HasMaxLength(60);
         builder.Property(b => b.Descripcion).HasMaxLength(1000);
         builder.Property(b => b.Avisos).HasMaxLength(2000).IsRequired();
+        builder.Property(b => b.InstagramMediaId).HasMaxLength(64);
+        builder.Property(b => b.Enlace).HasMaxLength(300);
 
         builder.HasOne<Tienda>().WithMany()
             .HasForeignKey(b => b.TiendaId).OnDelete(DeleteBehavior.Restrict);

@@ -4,6 +4,7 @@ using Hermes.Application.Exceptions;
 using Hermes.Application.Instagram;
 using Hermes.Application.Interfaces;
 using Hermes.Domain.Entities;
+using Hermes.Infrastructure.Imagenes;
 using Hermes.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,14 +22,17 @@ public class InstagramService : IInstagramService
     private readonly IStockService _stock;
     private readonly ITiendaActual _sesion;
     private readonly TimeProvider _reloj;
+    private readonly IAlmacenArchivos? _almacen;
 
-    public InstagramService(HermesDbContext db, IProductoService productos, IStockService stock, ITiendaActual sesion, TimeProvider reloj)
+    // `almacen`: para las fotos de los borradores que vinieron de Instagram (M12). Sin él (pruebas de M11) se muestran sin fotos.
+    public InstagramService(HermesDbContext db, IProductoService productos, IStockService stock, ITiendaActual sesion, TimeProvider reloj, IAlmacenArchivos? almacen = null)
     {
         _db = db;
         _productos = productos;
         _stock = stock;
         _sesion = sesion;
         _reloj = reloj;
+        _almacen = almacen;
     }
 
     private void ExigirTienda() => _ = _sesion.TiendaId ?? throw new SinTiendaEnSesionException();
@@ -77,16 +81,7 @@ public class InstagramService : IInstagramService
         if (pendientes + productos.Count > Borrador.MaximoPendientes)
             throw new ValidacionException($"Tenés {pendientes} productos esperando en la bandeja (máximo {Borrador.MaximoPendientes}). Revisalos o descartalos antes de agregar más.");
 
-        var ahora = _reloj.GetUtcNow();
-        // Los de una misma publicación nacen en el mismo milisegundo y sus Guid v7 no tendrían orden: se escalonan para que
-        // en la bandeja (más nuevo primero) aparezcan en el orden de la publicación (el 1 arriba, después el 2…).
-        var nuevos = productos.Select((p, i) => new Borrador
-        {
-            Id = Guid.CreateVersion7(ahora.AddMilliseconds(productos.Count - i)),
-            Texto = texto, Nombre = p.Nombre!, Precio = p.Precio, PrecioAnterior = p.PrecioAnterior,
-            Colores = string.Join(", ", p.Colores), Tallas = string.Join(", ", p.Tallas), Stock = p.Stock,
-            Categoria = p.Categoria, Descripcion = p.Descripcion, Avisos = string.Join("\n", p.Avisos), CreadoEn = ahora,
-        }).ToList();
+        var nuevos = ArmarBorradores(texto, productos, _reloj.GetUtcNow());
         _db.Borradores.AddRange(nuevos);
         await _db.SaveChangesAsync(ct);
         return nuevos.Select(ADto).ToList();
@@ -108,14 +103,14 @@ public class InstagramService : IInstagramService
         if (hayMas) pagina.RemoveAt(pagina.Count - 1);
 
         var pendientes = await _db.Borradores.CountAsync(b => b.Estado == EstadoBorrador.Pendiente, ct);
-        return new PaginaDeBorradoresDto(pagina.Select(ADto).ToList(), hayMas ? pagina[^1].Id : null, pendientes);
+        return new PaginaDeBorradoresDto(await ADtosAsync(pagina, ct), hayMas ? pagina[^1].Id : null, pendientes);
     }
 
     public async Task<BorradorDto> ObtenerAsync(Guid id, CancellationToken ct)
     {
         ExigirTienda();
         var b = await _db.Borradores.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct) ?? throw new BorradorNoEncontradoException(id);
-        return ADto(b);
+        return (await ADtosAsync([b], ct))[0];
     }
 
     public async Task<BorradorDto> DescartarAsync(Guid id, CancellationToken ct)
@@ -184,9 +179,37 @@ public class InstagramService : IInstagramService
 
     // ───────────── DTOs ─────────────
 
-    private static BorradorDto ADto(Borrador b) => new(
+    private static BorradorDto ADto(Borrador b) => ADto(b, []);
+
+    private static BorradorDto ADto(Borrador b, IReadOnlyList<ImagenDto> fotos) => new(
         b.Id, b.Estado, b.Origen, b.Texto, b.Nombre, b.Precio, b.PrecioAnterior, Partir(b.Colores), Partir(b.Tallas), b.Stock,
-        b.Categoria, b.Descripcion, b.Avisos.Length == 0 ? [] : b.Avisos.Split('\n'), Faltan(b.Nombre, b.Precio), b.ProductoId, b.CreadoEn);
+        b.Categoria, b.Descripcion, b.Avisos.Length == 0 ? [] : b.Avisos.Split('\n'), Faltan(b.Nombre, b.Precio), b.ProductoId, b.CreadoEn,
+        fotos, b.Enlace);
+
+    // Los que vinieron de Instagram (M12) traen sus fotos, en orden.
+    private async Task<List<BorradorDto>> ADtosAsync(IReadOnlyList<Borrador> borradores, CancellationToken ct)
+    {
+        var ids = borradores.Where(b => b.InstagramMediaId != null).Select(b => b.Id).ToList();
+        if (ids.Count == 0 || _almacen is null) return borradores.Select(ADto).ToList();
+        var fotos = await _db.BorradorFotos.AsNoTracking().Where(f => ids.Contains(f.BorradorId)).OrderBy(f => f.Orden).ToListAsync(ct);
+        var imagenIds = fotos.Select(f => f.ImagenId).ToList();
+        var imagenes = await _db.Imagenes.AsNoTracking().Where(i => imagenIds.Contains(i.Id)).ToDictionaryAsync(i => i.Id, ct);
+        var tienda = _sesion.TiendaId!.Value;
+        return borradores.Select(b => ADto(b, fotos.Where(f => f.BorradorId == b.Id && imagenes.ContainsKey(f.ImagenId))
+            .Select(f => ImagenMapeo.ADto(_almacen, tienda, imagenes[f.ImagenId])).ToList())).ToList();
+    }
+
+    // Arma los borradores de una publicación (la usan "importar" y la sincronización con Instagram). Los de una misma
+    // publicación nacen en el mismo milisegundo y sus Guid v7 no tendrían orden: se escalonan para que en la bandeja (más
+    // nuevo primero) aparezcan en el orden de la publicación (el 1 arriba, después el 2…).
+    internal static List<Borrador> ArmarBorradores(string texto, IReadOnlyList<ProductoLeido> productos, DateTimeOffset ahora)
+        => productos.Select((p, i) => new Borrador
+        {
+            Id = Guid.CreateVersion7(ahora.AddMilliseconds(productos.Count - i)),
+            Texto = texto, Nombre = p.Nombre!, Precio = p.Precio, PrecioAnterior = p.PrecioAnterior,
+            Colores = string.Join(", ", p.Colores), Tallas = string.Join(", ", p.Tallas), Stock = p.Stock,
+            Categoria = p.Categoria, Descripcion = p.Descripcion, Avisos = string.Join("\n", p.Avisos), CreadoEn = ahora,
+        }).ToList();
 
     private static List<string> Partir(string lista) => lista.Length == 0 ? [] : lista.Split(", ").ToList();
 }

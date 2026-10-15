@@ -1,7 +1,7 @@
 # Decisiones tomadas sin consultar
 
 Registro de lo que se decidió por criterio propio mientras se construía (sin que el usuario lo pidiera de forma
-explícita). Cubre M0 a M11, M13, M14 y el carrito (las de M6 en adelante van primero; las de M0–M5 están en "Módulos anteriores"). Cada módulo nuevo
+explícita). Cubre M0 a M14 y el carrito (las de M6 en adelante van primero; las de M0–M5 están en "Módulos anteriores"). Cada módulo nuevo
 agrega acá las suyas. Cada una dice **por qué** y **cómo se cambia**. Las marcadas con ⚠️ son las que más conviene revisar
 porque cambian lo que ve o paga la dueña, o son difíciles de revertir.
 
@@ -77,6 +77,19 @@ producto (encendido por defecto) y "venta rápida" con cliente opcional.
 | 50 | Detuve y reinicié el proceso de la API en tu PC varias veces para compilar (solo el proceso de la API). |
 | 51 | Creé cuentas de prueba y datos de prueba en `hermes_dev` con cada corrida de los scripts e2e (se acumulan; es la base de desarrollo). |
 | 52 | Las capturas de pantalla de `docs/capturas/` se regeneran en cada e2e y se commitean. |
+
+## Conexión con Instagram (M12)
+
+| # | Decisión | Por qué / cómo cambiarla |
+|---|---|---|
+| 166 | **"Instagram API with Instagram Login"** (cuentas profesionales, sin página de Facebook) y solo el permiso `instagram_business_basic` (leer). | Es la API vigente (la "Basic Display" se apagó en 2024) y lo mínimo que hace falta. Publicar desde la app hacia Instagram queda para después. |
+| 167 ⚠️ | **Solo entra a la bandeja lo que tiene PRECIO** en el texto. | Si no, cada "¡Gracias por los 1000 seguidores!" o sorteo llegaría como producto. Pegado a mano (M11) sigue entrando todo. |
+| 168 ⚠️ | **La primera vez se traen solo las publicaciones de los últimos 30 días**; lo anterior se marca como visto y no entra nunca. | Para no llenar la bandeja con todo el historial. Se cambia con `Instagram:DiasPrimeraSincronizacion`. |
+| 169 | **Cada 30 minutos** se revisa cada cuenta, más el botón "Traer lo nuevo" (no más de una vez por minuto). | Meta limita los pedidos por hora; 30 min es un buen equilibrio. |
+| 170 | **Fotos**: un producto → todas (hasta 8); carrusel con tantas fotos como productos → una cada uno; si no coinciden → ninguna, con aviso; video → su portada. | No hay forma segura de saber qué foto es de qué producto si los números no coinciden. |
+| 171 | **Las fotos traídas cuentan en el espacio del plan**; sin espacio, el borrador llega igual sin fotos y avisa. | Son fotos guardadas en la tienda como cualquier otra. |
+| 172 | **El token de Meta se guarda cifrado** (clave propia, `INSTAGRAM_CLAVE_CIFRADO`) y desconectar lo borra. | Si alguien leyera la base, no podría usar las cuentas. Cambiar la clave obliga a reconectar. |
+| 173 | **Si Meta revoca el permiso**, la conexión queda marcada "volvé a conectar" y no se reintenta sola. | Insistir con un token muerto no sirve y Meta lo penaliza. |
 
 ## Salida a producción (M14)
 
@@ -272,3 +285,4 @@ Agregado después, repasando lo que se decidió en la primera parte. Mismas marc
 7. **Precios de los planes** (#129) y **qué pasa al vencer** (#135). Y los datos reales de cobro (QR/cuenta) para el texto de pago (#131).
 8. **Carrito**: que pedir no reserve stock (#144) y que la venta se cobre al precio de hoy (#146).
 9. **Producción**: elegir el servidor (#154), revisar términos y privacidad con un abogado (#164) y dónde copiar los respaldos (#158).
+10. **Instagram**: que solo entre lo que tiene precio (#167) y los 30 días de la primera vez (#168). Y crear la app de Meta.

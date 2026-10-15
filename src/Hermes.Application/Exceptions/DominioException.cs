@@ -290,6 +290,23 @@ public class PedidoYaResueltoException : DominioException
         : base($"Este pedido ya está {estado}.") { }
 }
 
+// La plataforma no tiene una app de Meta configurada, o la tienda no conectó su cuenta.
+public class InstagramNoDisponibleException : DominioException
+{
+    public override int Status => 409;
+
+    public InstagramNoDisponibleException(string mensaje) : base(mensaje) { }
+}
+
+// Meta rechazó algo (código vencido, token revocado, cuenta personal…). El mensaje es para mostrar.
+public class InstagramRechazoException : DominioException
+{
+    public override int Status => 400;
+    public bool TokenInvalido { get; }
+
+    public InstagramRechazoException(string mensaje, bool tokenInvalido = false) : base(mensaje) => TokenInvalido = tokenInvalido;
+}
+
 // La tienda apagó "Recibir pedidos" o no tiene WhatsApp: el carrito no puede mandar nada.
 public class TiendaSinPedidosException : DominioException
 {

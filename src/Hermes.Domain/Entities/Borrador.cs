@@ -40,6 +40,12 @@ public class Borrador : IPerteneceATienda
     // El producto en que se convirtió (Estado = Publicado).
     public Guid? ProductoId { get; set; }
 
+    // Origen = "Instagram" (M12): de qué publicación vino y su enlace. Una publicación con varios productos (carrusel con
+    // lista) da varios borradores con el mismo MediaId.
+    public string? InstagramMediaId { get; set; }
+    public string? Enlace { get; set; }
+    public List<BorradorFoto> Fotos { get; set; } = [];
+
     public DateTimeOffset CreadoEn { get; set; }
     public DateTimeOffset? ResueltoEn { get; set; }
 }

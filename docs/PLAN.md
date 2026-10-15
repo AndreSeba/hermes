@@ -229,7 +229,12 @@ Se puede hacer **sin Meta**: el parser es lógica pura.
   de una publicación → **bandeja de revisión** → publicar al catálogo.
 - Listo cuando: 20 textos reales de Instagram se leen bien o la bandeja muestra claramente qué falta.
 
-### M12 · Conexión con Instagram (Meta) — **L**
+### M12 · Conexión con Instagram (Meta) — **L** ✅ (2026-10-15, falta la app de Meta real)
+Hecho con la API vigente de Meta (verificada en su documentación): conectar la cuenta profesional (OAuth con `state` firmado),
+token cifrado que se renueva solo, sincronización cada 30 min + "Traer lo nuevo", publicaciones con precio → bandeja con sus
+fotos (carruseles y videos incluidos), reconectar cuando Meta revoca, desconectar. 20 pruebas + e2e contra un **Meta falso**
+(`scripts/meta_falso.py`). **Falta (necesita al usuario)**: crear la app de Meta, cargar sus claves y, para tiendas ajenas, la
+revisión de Meta ("Advanced Access"): pasos en `docs/DESPLIEGUE.md`. No incluido: publicar DESDE la app hacia Instagram.
 - ⚠️ Antes de empezar: **verificar los requisitos vigentes de Meta** (cuentas Business/Creator, revisión de la app).
 - Login de Meta, token **cifrado**, renovación programada (~60 días), sincronización cada 15–30 min
   + botón "Sincronizar ahora", nuevas publicaciones → bandeja de M11.
@@ -278,7 +283,7 @@ cuenta de Sentry y, más adelante, la de Cloudflare R2.
 | 2b | ~~Dónde guardar las fotos~~ | M2 | ✅ Postgres ahora; Cloudflare R2 al crecer (ver M2) |
 | 3 | ~~Modelo de variantes~~ | M4 | ✅ `Color` + `Talla` opcionales (colores × tallas) |
 | 4 | Tienda pública: Razor Pages o React | M10 | Razor Pages (vista previa en WhatsApp) |
-| 5 | Requisitos actuales de Meta | M12 | Verificar antes de empezar |
+| 5 | ~~Requisitos actuales de Meta~~ | M12 | ✅ Instagram Login (sin página de Facebook), `instagram_business_basic`; para tiendas ajenas, revisión de Meta |
 | 6 | Precios de los planes | M13 | Provisorios (Bs 0 / 39 / 89): verificar competencia y ajustar en el panel |
 | 7 | Hosting | M14 | VPS chico (US$5–10) al inicio — todo listo para Docker (`docs/DESPLIEGUE.md`); falta contratarlo |
 | 8 | **Nombre del producto** | antes de M10 (la tienda pública lo muestra) | — |

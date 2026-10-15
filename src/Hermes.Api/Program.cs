@@ -33,6 +33,8 @@ builder.Services.AddScoped<ITiendaActual, TiendaActualDesdeToken>();
 builder.Services.AddInfrastructure(builder.Configuration);
 // Refresh tokens vencidos y fotos que nadie usa, cada hora (Limpieza:*). Solo acá: el sitio público no la corre.
 builder.Services.AddHostedService<Hermes.Infrastructure.Mantenimiento.LimpiezaPeriodica>();
+// Publicaciones nuevas de Instagram a la bandeja, cada Instagram:IntervaloMinutos (solo si hay una app de Meta configurada).
+builder.Services.AddHostedService<Hermes.Infrastructure.Instagram.SincronizacionInstagramPeriodica>();
 
 builder.Services.AddExceptionHandler<ManejadorGlobalDeExcepciones>();
 builder.Services.AddProblemDetails();
