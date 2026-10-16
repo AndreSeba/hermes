@@ -488,3 +488,4 @@ scripts/admin.local.json
 # Despliegue: secretos y respaldos (nunca a git)
 deploy/.env
 deploy/respaldos/
+scripts/catalogo.local.json
