@@ -13,6 +13,8 @@ public interface IInstagramService
 
     Task<PaginaDeBorradoresDto> ListarAsync(FiltroBorradoresDto filtro, CancellationToken ct);
     Task<BorradorDto> ObtenerAsync(Guid id, CancellationToken ct);
+    // Cuántos esperan en la bandeja, separados en "listos" (con precio) y "sin precio" (para el aviso del Inicio).
+    Task<ResumenBandejaDto> ResumenBandejaAsync(CancellationToken ct);
 
     // Una sola vez (409 si ya se publicó o descartó): crea el producto con lo que la dueña revisó.
     Task<PublicacionDto> PublicarAsync(Guid id, PublicarBorradorDto dto, CancellationToken ct);

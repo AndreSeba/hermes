@@ -33,4 +33,6 @@ public record InicioDto(
     decimal PorPagar, int EnCamino,
     int Agotados, int PorAgotarse, IReadOnlyList<ProductoParaReponerDto> ParaReponer,
     IReadOnlyList<ActividadDto> Recientes,
-    int PedidosPendientes = 0); // del carrito de la tienda pública: Nuevos + Confirmados, sin importar el período
+    int PedidosPendientes = 0, // del carrito de la tienda pública: Nuevos + Confirmados, sin importar el período
+    int BorradoresListos = 0, int BorradoresSinPrecio = 0, // la bandeja de Instagram (no depende del período)
+    int UnidadesDeLaTienda = 0); // unidades de pedidos de la tienda web entregados EN el período

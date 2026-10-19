@@ -69,6 +69,16 @@ public class PedidoService : IPedidoService
             porEstado.FirstOrDefault(x => x.Estado == EstadoPedido.Confirmado)?.N ?? 0);
     }
 
+    public async Task<int> UnidadesEntregadasAsync(FiltroPeriodoDto filtro, CancellationToken ct)
+    {
+        TiendaIdDeLaSesion();
+        var pedidos = _db.Pedidos.AsNoTracking().Where(p => p.Estado == EstadoPedido.Entregado);
+        if (filtro.Desde is { } desde) { var d = desde.UtcDateTime; pedidos = pedidos.Where(p => p.ResueltoEn >= d); }
+        if (filtro.Hasta is { } hasta) { var h = hasta.UtcDateTime; pedidos = pedidos.Where(p => p.ResueltoEn < h); }
+        // Sumas de enteros: se hacen en la base (SQLite sí suma enteros; lo que no suma son los decimales).
+        return await _db.PedidoLineas.AsNoTracking().Where(l => pedidos.Any(p => p.Id == l.PedidoId)).SumAsync(l => (int?)l.Cantidad, ct) ?? 0;
+    }
+
     public async Task<PedidoDto> ObtenerAsync(Guid id, CancellationToken ct)
     {
         TiendaIdDeLaSesion();

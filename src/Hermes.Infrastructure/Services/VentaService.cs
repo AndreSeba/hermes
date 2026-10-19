@@ -164,6 +164,55 @@ public class VentaService : IVentaService
         return new PaginaDeVentasDto(items, hayMas ? items[^1].Id : null);
     }
 
+    public async Task<IReadOnlyList<VentaDiaDto>> PorDiaAsync(FiltroPorDiaDto filtro, CancellationToken ct)
+    {
+        TiendaIdDeLaSesion();
+        if (filtro.Dias is < 1 or > 60) throw new ValidacionException("Pedí entre 1 y 60 días.");
+        if (filtro.DesfaseMinutos is < -840 or > 840) throw new ValidacionException("El desfase horario no es válido.");
+
+        var desde = filtro.Desde.UtcDateTime;
+        var hasta = desde.AddDays(filtro.Dias);
+        var filas = await _db.VentaLineas.AsNoTracking()
+            .Where(l => !l.Venta!.Anulada && l.Venta.Fecha >= desde && l.Venta.Fecha < hasta)
+            .Select(l => new { l.VentaId, l.Venta!.Fecha, l.Cantidad, l.PrecioUnitario }).ToListAsync(ct);
+
+        // El día de cada venta es el de quien mira: hora local = UTC − desfase (getTimezoneOffset es UTC − local).
+        var primero = DateOnly.FromDateTime(desde.AddMinutes(-filtro.DesfaseMinutos));
+        var porDia = filas.GroupBy(f => DateOnly.FromDateTime(f.Fecha.AddMinutes(-filtro.DesfaseMinutos)))
+            .ToDictionary(g => g.Key, g => (Total: g.Sum(f => f.PrecioUnitario * f.Cantidad), Ventas: g.Select(f => f.VentaId).Distinct().Count()));
+        return Enumerable.Range(0, filtro.Dias).Select(i =>
+        {
+            var dia = primero.AddDays(i);
+            return porDia.TryGetValue(dia, out var d) ? new VentaDiaDto(dia, d.Total, d.Ventas) : new VentaDiaDto(dia, 0, 0);
+        }).ToList();
+    }
+
+    public async Task<IReadOnlyList<MasVendidoDto>> MasVendidosAsync(FiltroMasVendidosDto filtro, CancellationToken ct)
+    {
+        TiendaIdDeLaSesion();
+        var limite = Math.Clamp(filtro.Limite ?? 5, 1, 20);
+        var lineas = _db.VentaLineas.AsNoTracking().Where(l => !l.Venta!.Anulada);
+        if (filtro.Desde is { } desde) { var d = desde.UtcDateTime; lineas = lineas.Where(l => l.Venta!.Fecha >= d); }
+        if (filtro.Hasta is { } hasta) { var h = hasta.UtcDateTime; lineas = lineas.Where(l => l.Venta!.Fecha < h); }
+
+        var filas = await lineas.Select(l => new { l.ProductoId, l.Descripcion, l.Cantidad, l.PrecioUnitario, l.CostoUnitario }).ToListAsync(ct);
+        var top = filas.GroupBy(f => f.ProductoId)
+            .Select(g => new
+            {
+                ProductoId = g.Key,
+                Unidades = g.Sum(f => f.Cantidad),
+                // Solo las unidades con costo cargado cuentan para la ganancia (como en el resumen: no se inventa).
+                Ganancia = g.Any(f => f.CostoUnitario > 0) ? g.Where(f => f.CostoUnitario > 0).Sum(f => (f.PrecioUnitario - f.CostoUnitario) * f.Cantidad) : (decimal?)null,
+                Descripcion = g.First().Descripcion,
+            })
+            .OrderByDescending(x => x.Unidades).ThenByDescending(x => x.Ganancia ?? 0).Take(limite).ToList();
+
+        // El nombre de hoy del producto (la descripción de la venta trae también la variante: "Cartera (café · M)").
+        var ids = top.Select(x => x.ProductoId).ToList();
+        var nombres = await _db.Productos.AsNoTracking().Where(p => ids.Contains(p.Id)).ToDictionaryAsync(p => p.Id, p => p.Nombre, ct);
+        return top.Select(x => new MasVendidoDto(x.ProductoId, nombres.GetValueOrDefault(x.ProductoId, x.Descripcion), x.Unidades, x.Ganancia)).ToList();
+    }
+
     public async Task<ResumenVentasDto> ResumenAsync(FiltroPeriodoDto filtro, CancellationToken ct)
     {
         TiendaIdDeLaSesion();

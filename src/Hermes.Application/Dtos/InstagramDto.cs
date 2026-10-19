@@ -39,6 +39,9 @@ public record FiltroBorradoresDto(EstadoBorrador Estado = EstadoBorrador.Pendien
 
 public record PaginaDeBorradoresDto(IReadOnlyList<BorradorDto> Items, Guid? Siguiente, int Pendientes);
 
+// Lo que espera en la bandeja: Listos = con precio (se pueden agregar al catálogo), SinPrecio = hay que cargarlo al revisar.
+public record ResumenBandejaDto(int Listos, int SinPrecio);
+
 // Publicar un borrador: el producto como la dueña lo dejó al revisarlo. `Stock` (de "Quedan 5") solo se carga si el
 // producto lleva control de stock y tiene UNA sola variante; con varias no se sabe cuántas son de cada una.
 public record PublicarBorradorDto(GuardarProductoDto Producto, int? Stock = null);

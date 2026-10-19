@@ -38,6 +38,18 @@ public record FiltroPeriodoDto(DateTimeOffset? Desde = null, DateTimeOffset? Has
 // UnidadesSinCosto dice cuántas unidades quedaron afuera por no tener costo cargado.
 public record ResumenVentasDto(int Ventas, int Unidades, decimal Total, decimal Ganancia, int UnidadesSinCosto, int Anuladas);
 
+// Para el gráfico del Inicio: Desde = la medianoche, EN LA HORA DE QUIEN MIRA, del primer día; DesfaseMinutos = lo que devuelve
+// `new Date().getTimezoneOffset()` del navegador (Bolivia: 240). Con eso el servidor sabe dónde empieza y termina cada día.
+public record FiltroPorDiaDto(DateTimeOffset Desde, int Dias = 14, int DesfaseMinutos = 0);
+
+// Un día del gráfico (siempre vienen TODOS los días pedidos, con 0 si no se vendió). Fecha = "2026-10-12", día de quien mira.
+public record VentaDiaDto(DateOnly Fecha, decimal Total, int Ventas);
+
+public record FiltroMasVendidosDto(DateTimeOffset? Desde = null, DateTimeOffset? Hasta = null, int? Limite = null);
+
+// Ganancia = null si ninguna de sus unidades tiene costo cargado (no se inventa).
+public record MasVendidoDto(Guid ProductoId, string Nombre, int Unidades, decimal? Ganancia);
+
 // ───────────── Para elegir qué vender ─────────────
 
 // Stock es null si el producto no lleva control (por encargo: siempre se puede vender).

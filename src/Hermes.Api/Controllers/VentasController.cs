@@ -23,6 +23,18 @@ public class VentasController : ControllerBase
     public async Task<ActionResult<ResumenVentasDto>> Resumen([FromQuery] FiltroPeriodoDto filtro, CancellationToken ct)
         => Ok(await _ventaService.ResumenAsync(filtro, ct));
 
+    // Lo vendido día por día (el gráfico del Inicio): siempre vienen todos los días pedidos, con 0 si no se vendió.
+    [HttpGet("por-dia")]
+    [ProducesResponseType(typeof(IReadOnlyList<VentaDiaDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<IReadOnlyList<VentaDiaDto>>> PorDia([FromQuery] FiltroPorDiaDto filtro, CancellationToken ct)
+        => Ok(await _ventaService.PorDiaAsync(filtro, ct));
+
+    // Lo que más se vendió en el período (por unidades), con la ganancia de cada producto.
+    [HttpGet("mas-vendidos")]
+    public async Task<ActionResult<IReadOnlyList<MasVendidoDto>>> MasVendidos([FromQuery] FiltroMasVendidosDto filtro, CancellationToken ct)
+        => Ok(await _ventaService.MasVendidosAsync(filtro, ct));
+
     // Los productos para elegir en "Nueva venta": con sus variantes y cuánto queda; los agotados al final.
     [HttpGet("productos")]
     public async Task<ActionResult<PaginaDeVendiblesDto>> Productos([FromQuery] FiltroVendiblesDto filtro, CancellationToken ct)

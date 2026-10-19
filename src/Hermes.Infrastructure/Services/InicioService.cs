@@ -18,14 +18,16 @@ public class InicioService : IInicioService
     private readonly IStockService _stock;
     private readonly IGastoService _gastos;
     private readonly IPedidoService? _pedidos;
+    private readonly IInstagramService? _instagram;
 
-    public InicioService(IVentaService ventas, ICompraService compras, IStockService stock, IGastoService gastos, IPedidoService? pedidos = null)
+    public InicioService(IVentaService ventas, ICompraService compras, IStockService stock, IGastoService gastos, IPedidoService? pedidos = null, IInstagramService? instagram = null)
     {
         _ventas = ventas;
         _compras = compras;
         _stock = stock;
         _gastos = gastos;
         _pedidos = pedidos;
+        _instagram = instagram;
     }
 
     public async Task<InicioDto> ResumenAsync(FiltroPeriodoDto periodo, CancellationToken ct)
@@ -39,6 +41,8 @@ public class InicioService : IInicioService
 
         var recientes = await RecientesAsync(ct);
         var pedidos = _pedidos is null ? null : await _pedidos.ResumenAsync(ct);
+        var desdeTienda = _pedidos is null ? 0 : await _pedidos.UnidadesEntregadasAsync(periodo, ct);
+        var bandeja = _instagram is null ? null : await _instagram.ResumenBandejaAsync(ct);
 
         // "Ya cubriste el X % de los gastos": la ganancia del período contra los gastos del período.
         int? cubierto = gastos > 0 ? (int)Math.Max(0, Math.Floor(ventas.Ganancia / gastos * 100)) : null;
@@ -50,7 +54,8 @@ public class InicioService : IInicioService
             stock.Agotados, stock.PorAgotarse,
             reponer.Items.Select(p => new ProductoParaReponerDto(p.Id, p.Nombre, p.Estado, p.Stock ?? 0)).ToList(),
             recientes,
-            pedidos is null ? 0 : pedidos.Nuevos + pedidos.Confirmados);
+            pedidos is null ? 0 : pedidos.Nuevos + pedidos.Confirmados,
+            bandeja?.Listos ?? 0, bandeja?.SinPrecio ?? 0, desdeTienda);
     }
 
     // Las últimas ventas, compras y gastos (no anulados) mezclados por fecha: lo que pasó últimamente, sin importar el período.

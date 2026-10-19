@@ -106,6 +106,14 @@ public class InstagramService : IInstagramService
         return new PaginaDeBorradoresDto(await ADtosAsync(pagina, ct), hayMas ? pagina[^1].Id : null, pendientes);
     }
 
+    public async Task<ResumenBandejaDto> ResumenBandejaAsync(CancellationToken ct)
+    {
+        ExigirTienda();
+        var porPrecio = await _db.Borradores.AsNoTracking().Where(b => b.Estado == EstadoBorrador.Pendiente)
+            .GroupBy(b => b.Precio != null && b.Precio > 0).Select(g => new { ConPrecio = g.Key, N = g.Count() }).ToListAsync(ct);
+        return new ResumenBandejaDto(porPrecio.FirstOrDefault(x => x.ConPrecio)?.N ?? 0, porPrecio.FirstOrDefault(x => !x.ConPrecio)?.N ?? 0);
+    }
+
     public async Task<BorradorDto> ObtenerAsync(Guid id, CancellationToken ct)
     {
         ExigirTienda();

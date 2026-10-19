@@ -8,6 +8,8 @@ public interface IPedidoService
 {
     Task<PaginaDePedidosDto> ListarAsync(FiltroPedidosDto filtro, CancellationToken ct);
     Task<ResumenPedidosDto> ResumenAsync(CancellationToken ct);
+    // Unidades de los pedidos ENTREGADOS en el período (por la fecha en que se entregaron): "N desde la tienda web" del Inicio.
+    Task<int> UnidadesEntregadasAsync(FiltroPeriodoDto filtro, CancellationToken ct);
     Task<PedidoDto> ObtenerAsync(Guid id, CancellationToken ct);
     Task<PedidoDto> ConfirmarAsync(Guid id, CancellationToken ct);
     Task<PedidoDto> CancelarAsync(Guid id, CancelarPedidoDto dto, CancellationToken ct);
