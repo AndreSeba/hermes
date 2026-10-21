@@ -1,0 +1,23 @@
+# Variante con la base en Neon (Postgres administrado) en vez del Postgres del servidor.
+#   docker compose -f docker-compose.yml -f docker-compose.neon.yml up -d --build
+# Falta en .env: NEON_HOST y NEON_APP_PASSWORD (la contraseña del rol hermes_app, la que se resetea en la consola de Neon).
+# El Postgres local y el respaldo quedan apagados (perfil "local"); los respaldos pasan a ser los de Neon.
+# Las migraciones NO corren solas: ya se aplicaron en Neon (cuando haya una nueva, ver docs/DESPLIEGUE.md).
+
+x-neon: &neon
+  ConnectionStrings__HermesDb: "Host=${NEON_HOST:?Falta NEON_HOST en .env};Port=5432;Database=neondb;Username=hermes_app;Password=${NEON_APP_PASSWORD:?Falta NEON_APP_PASSWORD en .env};Ssl Mode=Require;Maximum Pool Size=10"
+
+services:
+  postgres:
+    profiles: ["local"]
+  respaldo:
+    profiles: ["local"]
+  api:
+    depends_on: !reset []
+    environment:
+      <<: *neon
+      Base__MigrarAlArrancar: "false"
+      ConnectionStrings__HermesDbMigraciones: ""
+  public:
+    environment:
+      <<: *neon
