@@ -4,7 +4,7 @@
 # Contexto: la raíz de este repo.
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS compilar
-ARG PROYECTO
+ARG PROYECTO=Hermes.Api
 WORKDIR /src
 # Primero solo los .csproj: la restauración queda en caché mientras no cambien los paquetes.
 COPY src/Hermes.Domain/Hermes.Domain.csproj src/Hermes.Domain/
@@ -17,7 +17,7 @@ COPY src/ src/
 RUN dotnet publish src/${PROYECTO}/${PROYECTO}.csproj -c Release -r linux-x64 --self-contained false --no-restore -o /salida
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
-ARG PROYECTO
+ARG PROYECTO=Hermes.Api
 # SkiaSharp en Linux necesita fontconfig, y la imagen de vista previa (nombre de la tienda) necesita alguna fuente.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libfontconfig1 fonts-dejavu-core curl \
