@@ -1,6 +1,6 @@
 # Hermes — contexto del proyecto
 
-> Nombre en clave: **Hermes** (provisorio). Documento para retomar el proyecto en cualquier sesión (por ejemplo, copiarlo como `CLAUDE.md` o `docs/CONTEXTO.md` del repo nuevo).
+> Nombre en clave: **Hermes** (provisorio). Documento para retomar el proyecto en cualquier sesión (por ejemplo, copiarlo como `docs/CONTEXTO.md` del repo nuevo).
 > Última actualización: 2026-10-14.
 
 ## 1. Qué es
@@ -29,7 +29,7 @@ La persona debe sentir satisfacción al administrar su negocio. La idea fuerza e
 
 ## 3. Entregables hechos hasta ahora
 
-1. **Prototipo navegable (lienzo de diseño)**: https://claude.ai/artifact/PGM55zLCv1g48RFGRMHPhr (privado, versión 30). 31 pantallas: celular (390×844) y web de escritorio (1440).
+1. **Prototipo navegable (lienzo de diseño)** (privado, versión 30). 31 pantallas: celular (390×844) y web de escritorio (1440).
    - Celular: Bienvenida, Inicio, Nuevos desde Instagram, Revisar producto, Catálogo, Calculadora de precio, Nueva venta, Tienda pública, Producto (vista del cliente), Configurar mi tienda, Probá tu formato, Nuevo producto + publicar en Instagram, Personalizar diseño, Stock, Proveedores, Compras, Nueva compra.
    - Web: equivalentes de la mayoría (Inicio, Instagram, Catálogo, Precio, Tienda, Venta, Config tienda, Nuevo producto, Producto, Diseño, Stock, Proveedores, Compras, Nueva compra).
    - Límite: las pantallas del lienzo son independientes (sin estado compartido). No se probó en navegador, solo revisiones estáticas.

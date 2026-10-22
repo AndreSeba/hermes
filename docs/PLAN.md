@@ -1,6 +1,6 @@
 # Plan de implementación — módulo por módulo
 
-> Fecha: 2026-10-14. Complementa `docs/CONTEXTO.md` (qué es el producto) y los `CLAUDE.md` de
+> Fecha: 2026-10-14. Complementa `docs/CONTEXTO.md` (qué es el producto) y las guías (`docs/GUIA.md`) de
 > `Hermes` y `Hermes.Web` (cómo está construido). Se trabaja **un módulo a la vez, de punta a
 > punta** (backend + front + pruebas) y no se empieza el siguiente hasta cerrar el anterior.
 
@@ -25,7 +25,7 @@ Cada módulo pasa por los mismos pasos. Un módulo está **terminado** cuando cu
 **Cierre**
 11. Prueba de punta a punta contra la API real (flujo feliz + errores principales).
 12. `dotnet test`, `pnpm build`, `pnpm lint` y `pnpm audit` limpios.
-13. `CLAUDE.md` de cada repo actualizado (reglas nuevas, trampas encontradas).
+13. `docs/GUIA.md` de cada repo actualizado (reglas nuevas, trampas encontradas).
 14. Un commit por repo.
 
 Tamaños: **S** = una sesión corta, **M** = una sesión, **L** = dos o más sesiones.

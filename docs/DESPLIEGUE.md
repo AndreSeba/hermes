@@ -146,6 +146,6 @@ mirarla con calma** (`docker compose logs -f api`).
 
 ## Más adelante
 
-- **Fotos a Cloudflare R2** cuando haya muchas tiendas (ver `Almacenamiento:Tipo` en CLAUDE.md): hoy viven en Postgres y entran
+- **Fotos a Cloudflare R2** cuando haya muchas tiendas (ver `Almacenamiento:Tipo` en docs/GUIA.md): hoy viven en Postgres y entran
   en los respaldos.
 - Más de un servidor: sacar `BloqueoDeLogin` (en memoria) a una caché compartida y migrar aparte (no al arrancar).
