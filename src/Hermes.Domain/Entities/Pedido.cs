@@ -16,7 +16,8 @@ public enum EntregaPedido
     Envio,  // a domicilio: lleva dirección
 }
 
-// Un pedido que hizo un cliente desde la tienda pública (carrito). NO toca el stock: recién al registrar la venta se descuenta.
+// Un pedido que hizo un cliente desde la tienda pública (carrito). Nuevo no toca el stock; al CONFIRMARLO se aparta
+// (movimiento Reserva) y al cancelarlo se libera; al entregarlo se libera la reserva y la venta descuenta.
 // Nunca se borra: termina Entregado (con su venta) o Cancelado.
 public class Pedido : IPerteneceATienda
 {
@@ -46,6 +47,9 @@ public class Pedido : IPerteneceATienda
     public string? MotivoCancelacion { get; set; }
     // La venta que se registró al entregarlo.
     public Guid? VentaId { get; set; }
+    // true mientras el stock de sus líneas está apartado (desde que se confirma hasta que se cancela o se entrega).
+    // Es un dato aparte del estado: los pedidos confirmados antes de que existiera la reserva no apartaron nada.
+    public bool StockReservado { get; set; }
 
     public List<PedidoLinea> Lineas { get; set; } = [];
 }

@@ -23,6 +23,9 @@ public class Venta : IPerteneceATienda
     // reintento por mala conexión), la segunda devuelve la venta ya registrada en vez de duplicarla.
     public Guid ClaveIdempotencia { get; set; }
 
+    // Quién la registró (null en las ventas anteriores a los roles). Una persona sin el permiso de ver todas las ventas ve solo las suyas.
+    public Guid? UsuarioId { get; set; }
+
     public bool Anulada { get; set; }
     public DateTime? AnuladaEn { get; set; }
 

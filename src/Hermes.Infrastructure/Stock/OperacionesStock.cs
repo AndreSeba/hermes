@@ -34,7 +34,7 @@ public class OperacionesStock : IOperacionesStock
         var costoPorVariante = lineas.Where(l => l.CostoUnitario > 0).GroupBy(l => l.VarianteId).ToDictionary(g => g.Key, g => g.Last().CostoUnitario);
         foreach (var (_, cantidad) in porVariante)
         {
-            var signoOk = tipo is TipoMovimiento.Ingreso or TipoMovimiento.Devolucion ? cantidad > 0 : cantidad < 0;
+            var signoOk = tipo is TipoMovimiento.Ingreso or TipoMovimiento.Devolucion or TipoMovimiento.LiberaReserva ? cantidad > 0 : cantidad < 0;
             if (!signoOk || Math.Abs(cantidad) > MaximoPorMovimiento)
                 throw new ValidacionException($"La cantidad tiene que estar entre 1 y {MaximoPorMovimiento:N0}.");
         }
@@ -56,7 +56,7 @@ public class OperacionesStock : IOperacionesStock
                 throw new ProductoSinControlDeStockException(producto.Nombre);
             }
             // Anular una venta o una compra tiene que poder deshacer el stock aunque la variante se haya desactivado después.
-            if (!variante.Activa && tipo is not (TipoMovimiento.Devolucion or TipoMovimiento.Reversion))
+            if (!variante.Activa && tipo is not (TipoMovimiento.Devolucion or TipoMovimiento.Reversion or TipoMovimiento.LiberaReserva))
                 throw new ValidacionException($"{NombreCompleto(variante)} está desactivada: no se puede mover su stock.");
 
             var cantidad = (int)porVariante[id];

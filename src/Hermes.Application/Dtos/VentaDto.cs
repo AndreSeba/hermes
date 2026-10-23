@@ -18,14 +18,15 @@ public record VentaLineaDto(
     decimal PrecioUnitario, decimal? CostoUnitario, decimal Subtotal, decimal? Ganancia);
 
 // Ganancia es null si alguna línea no tenía costo (no se puede saber cuánto se ganó).
+// Vendedor: quién la registró (null en las ventas anteriores a los roles).
 public record VentaDto(
     Guid Id, DateTimeOffset Fecha, MetodoPago MetodoPago, string? Cliente, bool Anulada, DateTimeOffset? AnuladaEn,
-    int Unidades, decimal Total, decimal? Ganancia, IReadOnlyList<VentaLineaDto> Lineas);
+    int Unidades, decimal Total, decimal? Ganancia, IReadOnlyList<VentaLineaDto> Lineas, string? Vendedor = null);
 
 // Una fila del historial. Detalle: "2 Cartera de cuero Mía · 1 Aretes de plata Killa" (resumido).
 public record VentaResumenDto(
     Guid Id, DateTimeOffset Fecha, MetodoPago MetodoPago, string? Cliente, bool Anulada,
-    int Unidades, decimal Total, decimal? Ganancia, string Detalle);
+    int Unidades, decimal Total, decimal? Ganancia, string Detalle, string? Vendedor = null);
 
 // Desde incluido, Hasta excluido (el front manda el día local: medianoche a medianoche).
 public record FiltroVentasDto(DateTimeOffset? Desde = null, DateTimeOffset? Hasta = null, bool IncluirAnuladas = false, Guid? Cursor = null, int? Limite = null);

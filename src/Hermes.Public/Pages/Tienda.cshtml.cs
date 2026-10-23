@@ -13,7 +13,10 @@ public class TiendaModel : TiendaBase
 
     [BindProperty(SupportsGet = true)] public string? Q { get; set; }
     [BindProperty(SupportsGet = true)] public Guid? Categoria { get; set; }
-    [BindProperty(SupportsGet = true)] public string? Cursor { get; set; }
+    // Página numerada (?pagina=2). Una fuera de rango o inventada se acomoda sola (el servicio la acota).
+    [BindProperty(SupportsGet = true, Name = "pagina")] public int? NumeroPagina { get; set; }
+
+    public const int PorPagina = 12;
 
     public PaginaPublicaDto Pagina { get; private set; } = new([], null);
 
@@ -21,16 +24,7 @@ public class TiendaModel : TiendaBase
     {
         if (!await CargarTiendaAsync(ct)) return NotFound();
 
-        try
-        {
-            Pagina = await Publico.ProductosAsync(Slug, new FiltroPublicoDto(Q, Categoria, Cursor), ct);
-        }
-        catch (ValidacionException)
-        {
-            // Un cursor inventado en la dirección: se muestra desde el principio en vez de un error.
-            Cursor = null;
-            Pagina = await Publico.ProductosAsync(Slug, new FiltroPublicoDto(Q, Categoria), ct);
-        }
+        Pagina = await Publico.ProductosAsync(Slug, new FiltroPublicoDto(Q, Categoria, null, PorPagina, NumeroPagina ?? 1), ct);
 
         PonerVistaPrevia(Tienda.Nombre, Resumir(Tienda.Descripcion) is { Length: > 0 } d ? d : "Mirá lo que tenemos y pedí por WhatsApp.", DireccionDeTienda);
         return Page();

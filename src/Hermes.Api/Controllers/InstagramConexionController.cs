@@ -3,6 +3,8 @@ using Hermes.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+using Hermes.Domain.Seguridad;
+
 namespace Hermes.Api.Controllers;
 
 // M12: la cuenta de Instagram de la tienda. El token de Meta nunca sale de acá.
@@ -17,15 +19,18 @@ public class InstagramConexionController : ControllerBase
 
     // Configurada = la plataforma tiene una app de Meta; Conectada = esta tienda conectó su cuenta.
     [HttpGet]
+    [Authorize(Policy = Permisos.InstagramGestionar)]
     public async Task<ActionResult<InstagramConexionDto>> Estado(CancellationToken ct) => Ok(await _conexion.EstadoAsync(ct));
 
     // Adonde mandar a la dueña para que autorice (Instagram vuelve a Instagram:RedirectUri con ?code=…&state=…).
     [HttpGet("url")]
+    [Authorize(Policy = Permisos.InstagramGestionar)]
     [ProducesResponseType(typeof(UrlConexionDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public ActionResult<UrlConexionDto> DireccionParaConectar() => Ok(_conexion.Url());
 
     [HttpPost]
+    [Authorize(Policy = Permisos.InstagramGestionar)]
     [ProducesResponseType(typeof(InstagramConexionDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -33,6 +38,7 @@ public class InstagramConexionController : ControllerBase
         => Ok(await _conexion.ConectarAsync(dto, ct));
 
     [HttpDelete]
+    [Authorize(Policy = Permisos.InstagramGestionar)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Desconectar(CancellationToken ct)
     {
@@ -42,6 +48,7 @@ public class InstagramConexionController : ControllerBase
 
     // "Sincronizar ahora": trae las publicaciones nuevas a la bandeja.
     [HttpPost("sincronizar")]
+    [Authorize(Policy = Permisos.InstagramGestionar)]
     [ProducesResponseType(typeof(SincronizacionDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]

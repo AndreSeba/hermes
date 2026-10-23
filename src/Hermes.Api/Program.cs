@@ -30,6 +30,7 @@ builder.Services.AddControllers().AddJsonOptions(o => ConfigurarJson(o.JsonSeria
 builder.Services.AddOpenApi();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ITiendaActual, TiendaActualDesdeToken>();
+builder.Services.AddScoped<IUsuarioActual, UsuarioActualDesdeToken>();
 builder.Services.AddInfrastructure(builder.Configuration);
 // Refresh tokens vencidos y fotos que nadie usa, cada hora (Limpieza:*). Solo acá: el sitio público no la corre.
 builder.Services.AddHostedService<Hermes.Infrastructure.Mantenimiento.LimpiezaPeriodica>();
@@ -58,8 +59,31 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromMinutes(1),
         };
+        // Un token todavía vigente deja de servir si a esa persona le cambiaron el rol, la desactivaron o le restablecieron la
+        // contraseña DESPUÉS de emitirlo: el front recibe 401, renueva y obtiene los permisos de ahora.
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = contexto =>
+            {
+                var revocadas = contexto.HttpContext.RequestServices.GetRequiredService<ISesionesRevocadas>();
+                var principal = contexto.Principal;
+                if (Guid.TryParse(principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var usuarioId))
+                {
+                    // El instante exacto de emisión (ms) va en un claim propio; sin él (tokens viejos) vale el nbf, al segundo.
+                    var emitido = long.TryParse(principal!.FindFirst(JwtTokenService.ClaimEmitido)?.Value, out var ms)
+                        ? DateTimeOffset.FromUnixTimeMilliseconds(ms)
+                        : new DateTimeOffset(contexto.SecurityToken.ValidFrom, TimeSpan.Zero);
+                    if (revocadas.Invalida(usuarioId, emitido))
+                        contexto.Fail("La sesión se renovó: los permisos cambiaron.");
+                }
+                return Task.CompletedTask;
+            },
+        };
     });
 builder.Services.AddAuthorization(o => o.AgregarPoliticas());
+// Los permisos (policy = código de permiso) los resuelve este proveedor: no hace falta registrar uno por uno.
+builder.Services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationPolicyProvider, PermisoPolicyProvider>();
+builder.Services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, PermisoAuthorizationHandler>();
 builder.Services.AddLimites();
 
 // CORS con lista explícita de orígenes (nunca AllowAnyOrigin) — el frontend React vive en

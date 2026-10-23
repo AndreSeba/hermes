@@ -677,6 +677,35 @@ Carrito en la tienda pública + sección **Pedidos** en el panel. `IPublicoServi
 - "Ya cubriste el X %" se muestra tope **"100 %+"** en el front para no marear; el servidor sigue mandando el número real.
 - Probado: 7 pruebas (`TableroTests`) — 374 en total — y el e2e del panel (bloque 8h reescrito; `E2E_BASE` permite otro puerto).
 
+## Equipo, roles y permisos (2026-10-23, pedido del usuario)
+
+Un negocio puede tener gente a cargo (vendedores) y el dueño ve cómo va desde otro lado. Mismo patrón que InventoryPlatform (CMP).
+`RolesController` (`/api/v1/roles`), `EquipoController` (`/api/v1/equipo`), `POST /api/v1/auth/cambiar-password`, `GET ventas/por-vendedor`.
+Migración `AgregarRolesYEquipo` (tablas `roles`, `rol_permisos`, `miembros`; `usuarios.debe_cambiar_password`, `ventas.usuario_id`,
+`planes.max_usuarios`; las tres con RLS). **Pendiente aplicarla en Neon/VPS** junto con las otras dos migraciones sin subir.
+
+- **Permisos** = códigos en `Hermes.Domain/Seguridad/Permisos.cs` (`ventas.registrar`, `costos.ver`…). Viajan como claims `permiso` en el JWT
+  y se usan como nombre de policy (`[Authorize(Policy = Permisos.X)]`, varios con `a|b`): `PermisoPolicyProvider` las resuelve sin registrar
+  una por una. Agregar uno: la constante + una línea en `Catalogo`. **Toda acción de un controller exige un permiso o figura en las listas
+  de `PermisosEnLosEndpointsTests`** (la prueba recorre los controllers por reflexión) y todo permiso del catálogo tiene que usarse.
+- **Dueño** = `Tienda.DuenoId`, no un rol guardado: tiene siempre todos los permisos del catálogo. **Roles** por tienda, editables desde el
+  día 1; se crean al primer listado (Encargado, Vendedor, Solo ver). Nadie da ni administra más de lo que tiene; no se puede uno
+  desactivar ni cambiarse el rol a sí mismo.
+- **El dueño crea la cuenta** de cada persona (email + contraseña provisional); `Usuario.DebeCambiarPassword` obliga a elegir una propia antes de
+  usar el panel (el front muestra `CambiarPassword` en vez del panel). Plan limita personas (cuenta al dueño): Gratis 1, Emprendedor 3,
+  Negocio 10 (`ILimitesDePlan.ExigirPoderSumarPersonaAsync`, 402).
+- **Los permisos se leen de la base en cada refresh** (`AuthService.ResolverAccesoAsync`); cambiar un rol, desactivar o restablecer la
+  contraseña llama a `ISesionesRevocadas`: el token de acceso vigente se rechaza (claim `emi` en milisegundos) y el front renueva. Memoria
+  del servidor: con varias instancias pasarlo a caché compartida.
+- **Costos solo con `costos.ver`**: el controller los pone en 0/null con `Enmascarar.Costos(bool)` e `InicioDto.SegunPermisos`; una prueba
+  exige que todo DTO con `costo|ganancia|margen` figure en una lista conocida. Sin `ventas.ver` (ni `inicio.ver`) alguien ve **solo las
+  ventas que registró** (`Venta.UsuarioId`).
+- **Front**: `sesion.acceso` (`esDueno`, `rol`, `permisos`), `usePermisos().tiene('a|b')`, `Seccion.permiso` en el menú, `RequierePermiso`
+  en las rutas y a dónde entrar (`rutaDeEntrada`: un vendedor sin Inicio abre Nueva venta). La API sigue siendo la que manda.
+- Probado: `RolesTests`, `PermisosEnLosEndpointsTests` (407 pruebas en total), 45 verificaciones contra la API real y el panel en el
+  navegador (vendedora: cambio de contraseña, menú reducido, sin costos; dueño: Equipo y Roles).
+- **No incluido**: invitación por email, cambiar de negocio con una misma cuenta, auditoría de quién cambió qué, permisos por producto.
+
 ## Módulo de referencia: Categoría
 
 `Categoria` → `CategoriaConfiguration` → `CategoriaService` → `CategoriasController` →

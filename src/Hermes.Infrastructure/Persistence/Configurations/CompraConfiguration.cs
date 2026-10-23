@@ -11,6 +11,7 @@ public class ProveedorConfiguration : IEntityTypeConfiguration<Proveedor>
         builder.HasKey(p => p.Id);
         builder.Property(p => p.Nombre).HasMaxLength(120).IsRequired();
         builder.Property(p => p.Telefono).HasMaxLength(20);
+        builder.Property(p => p.Correo).HasMaxLength(254);
         builder.Property(p => p.Notas).HasMaxLength(300);
 
         builder.HasOne<Tienda>().WithMany()

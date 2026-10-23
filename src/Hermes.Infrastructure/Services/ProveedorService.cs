@@ -61,10 +61,10 @@ public class ProveedorService : IProveedorService
     public async Task<ProveedorDto> CrearAsync(GuardarProveedorDto dto, CancellationToken ct)
     {
         ExigirTienda();
-        var (nombre, telefono, notas) = Validar(dto);
+        var (nombre, telefono, notas, correo) = Validar(dto);
         await ExigirNombreLibreAsync(nombre, null, ct);
 
-        var proveedor = new Proveedor { Nombre = nombre, Telefono = telefono, Notas = notas };
+        var proveedor = new Proveedor { Nombre = nombre, Telefono = telefono, Notas = notas, Correo = correo };
         _db.Proveedores.Add(proveedor);
         await GuardarAsync(proveedor.Nombre, ct);
         return ADto(proveedor, null);
@@ -73,12 +73,13 @@ public class ProveedorService : IProveedorService
     public async Task<ProveedorDto> ActualizarAsync(Guid id, GuardarProveedorDto dto, CancellationToken ct)
     {
         ExigirTienda();
-        var (nombre, telefono, notas) = Validar(dto);
+        var (nombre, telefono, notas, correo) = Validar(dto);
         var proveedor = await _db.Proveedores.FirstOrDefaultAsync(p => p.Id == id, ct) ?? throw new ProveedorNoEncontradoException(id);
         await ExigirNombreLibreAsync(nombre, id, ct);
 
         proveedor.Nombre = nombre;
         proveedor.Telefono = telefono;
+        proveedor.Correo = correo;
         proveedor.Notas = notas;
         await GuardarAsync(nombre, ct);
         return ADto(proveedor, (await CuentasAsync([id], ct)).GetValueOrDefault(id));
@@ -95,8 +96,9 @@ public class ProveedorService : IProveedorService
 
     // ───────────── Interno ─────────────
 
-    private static (string Nombre, string? Telefono, string? Notas) Validar(GuardarProveedorDto dto)
-        => (Validacion.Texto(dto.Nombre, 120, "El nombre"), Validacion.Whatsapp(dto.Telefono), Validacion.TextoOpcional(dto.Notas, 300, "Las notas"));
+    private static (string Nombre, string? Telefono, string? Notas, string? Correo) Validar(GuardarProveedorDto dto)
+        => (Validacion.Texto(dto.Nombre, 120, "El nombre"), Validacion.Whatsapp(dto.Telefono), Validacion.TextoOpcional(dto.Notas, 300, "Las notas"),
+            string.IsNullOrWhiteSpace(dto.Correo) ? null : Validacion.Email(dto.Correo));
 
     private async Task ExigirNombreLibreAsync(string nombre, Guid? salvo, CancellationToken ct)
     {
@@ -136,7 +138,7 @@ public class ProveedorService : IProveedorService
     }
 
     private static ProveedorDto ADto(Proveedor p, Cuenta? c)
-        => new(p.Id, p.Nombre, p.Telefono, p.Notas, p.Activo, c?.PorPagar ?? 0, c?.EnCamino ?? 0, c?.Compras ?? 0);
+        => new(p.Id, p.Nombre, p.Telefono, p.Notas, p.Activo, c?.PorPagar ?? 0, c?.EnCamino ?? 0, c?.Compras ?? 0, p.Correo);
 
     private static DateTimeOffset Utc(DateTime d) => new(DateTime.SpecifyKind(d, DateTimeKind.Utc));
 }

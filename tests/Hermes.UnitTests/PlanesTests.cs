@@ -424,7 +424,7 @@ public class PlanesTests : IDisposable
         var usuario = new Usuario { Nombre = "U", Email = "u@x.test", EsAdministrador = esAdmin };
         var tienda = new Tienda { Slug = "t", Nombre = "T" };
 
-        var (token, _) = jwt.EmitirAccessToken(usuario, tienda);
+        var (token, _) = jwt.EmitirAccessToken(usuario, tienda, []);
 
         var claims = new JwtSecurityTokenHandler().ReadJwtToken(token).Claims.ToList();
         Assert.Equal(esperaClaim, claims.Any(c => c.Type == JwtTokenService.ClaimRol && c.Value == JwtTokenService.RolAdministrador));

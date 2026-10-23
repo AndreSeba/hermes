@@ -489,3 +489,4 @@ scripts/admin.local.json
 deploy/.env
 deploy/respaldos/
 scripts/catalogo.local.json
+scripts/ferreteria.local.json

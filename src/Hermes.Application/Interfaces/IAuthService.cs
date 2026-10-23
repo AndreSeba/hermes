@@ -11,4 +11,7 @@ public interface IAuthService
     // Idempotente: un token desconocido o ya revocado no es error.
     Task CerrarSesionAsync(string refreshToken, CancellationToken ct);
     Task<PerfilDto> ObtenerPerfilAsync(Guid usuarioId, Guid tiendaId, CancellationToken ct);
+    // Pide la contraseña actual (aunque tenga sesión abierta). Las demás sesiones de la persona se cierran: `refreshActual` es
+    // la de la cookie de quien la cambia, que sigue abierta.
+    Task CambiarPasswordAsync(Guid usuarioId, string? refreshActual, CambiarPasswordDto dto, CancellationToken ct);
 }

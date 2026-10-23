@@ -49,6 +49,9 @@ public class HermesDbContext : DbContext
     public DbSet<Imagen> Imagenes => Set<Imagen>();
     public DbSet<Archivo> Archivos => Set<Archivo>();
     public DbSet<Categoria> Categorias => Set<Categoria>();
+    public DbSet<Rol> Roles => Set<Rol>();
+    public DbSet<RolPermiso> RolPermisos => Set<RolPermiso>();
+    public DbSet<MiembroTienda> Miembros => Set<MiembroTienda>();
 
     // Lo lee el filtro global en cada consulta (EF lo parametriza por instancia del contexto),
     // así cada request ve solo su tienda. Sin tienda en sesión el filtro no devuelve nada.

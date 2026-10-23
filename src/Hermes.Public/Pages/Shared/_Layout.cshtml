@@ -1,4 +1,4 @@
-@using Hermes.Public
+﻿@using Hermes.Public
 @{
     // Lo pone cada página (ver TiendaBase). Sin tienda (404 / error) se usa una página neutra.
     var tienda = ViewData["Tienda"] as TiendaPublicaDto;
@@ -43,7 +43,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap" />
-    <link rel="stylesheet" href="/css/publico.css" />
+    <link rel="stylesheet" href="/css/publico.css" asp-append-version="true" />
     <style>
         :root {
             --marca: @marca;

@@ -1,4 +1,4 @@
-@page "/{slug}"
+﻿@page "/{slug}"
 @model TiendaModel
 @{
     var t = Model.Tienda;
@@ -75,11 +75,32 @@
                 </li>
             }
         </ul>
-        @if (Model.Pagina.Siguiente is { } siguiente)
+        @if (Model.Pagina.TotalPaginas > 1)
         {
-            <p class="mas">
-                <a class="boton" href="/@t.Slug?cursor=@Uri.EscapeDataString(siguiente)@(Model.Categoria is { } c2 ? "&categoria=" + c2 : "")@(string.IsNullOrWhiteSpace(Model.Q) ? "" : "&q=" + Uri.EscapeDataString(Model.Q!))">Ver más productos</a>
-            </p>
+            var actual = Model.Pagina.Pagina;
+            var total = Model.Pagina.TotalPaginas;
+            // Misma búsqueda y categoría en cada enlace; solo cambia el número de página.
+            string Enlace(int n) => $"/{t.Slug}?pagina={n}{(Model.Categoria is { } c2 ? "&categoria=" + c2 : "")}{(string.IsNullOrWhiteSpace(Model.Q) ? "" : "&q=" + Uri.EscapeDataString(Model.Q!))}";
+            // Primera, última y las vecinas de la actual; los huecos se marcan con "…".
+            var numeros = Enumerable.Range(1, total).Where(n => n == 1 || n == total || Math.Abs(n - actual) <= 1).ToList();
+            <nav class="paginas" aria-label="Páginas de productos">
+                @if (actual > 1)
+                {
+                    <a class="pag" href="@Enlace(actual - 1)" rel="prev" aria-label="Página anterior">Anterior</a>
+                }
+                @for (var i = 0; i < numeros.Count; i++)
+                {
+                    if (i > 0 && numeros[i] - numeros[i - 1] > 1)
+                    {
+                        <span class="pag pag-hueco" aria-hidden="true">…</span>
+                    }
+                    <a class="pag" href="@Enlace(numeros[i])" aria-label="Página @numeros[i]" aria-current="@(numeros[i] == actual ? "page" : null)">@numeros[i]</a>
+                }
+                @if (actual < total)
+                {
+                    <a class="pag" href="@Enlace(actual + 1)" rel="next" aria-label="Página siguiente">Siguiente</a>
+                }
+            </nav>
         }
     }
 </main>
@@ -91,4 +112,4 @@
     </footer>
 }
 
-<script src="/js/publico.js" defer></script>
+<script src="/js/publico.js" asp-append-version="true" defer></script>

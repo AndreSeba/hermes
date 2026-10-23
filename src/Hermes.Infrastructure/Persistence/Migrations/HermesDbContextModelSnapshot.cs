@@ -632,6 +632,49 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                     b.ToTable("instagram_publicaciones", "hermes");
                 });
 
+            modelBuilder.Entity("Hermes.Domain.Entities.MiembroTienda", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("boolean")
+                        .HasColumnName("activo");
+
+                    b.Property<DateTimeOffset>("CreadoEn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("creado_en");
+
+                    b.Property<Guid>("RolId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("rol_id");
+
+                    b.Property<Guid>("TiendaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tienda_id");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("usuario_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_miembros");
+
+                    b.HasIndex("RolId")
+                        .HasDatabaseName("ix_miembros_rol_id");
+
+                    b.HasIndex("UsuarioId")
+                        .HasDatabaseName("ix_miembros_usuario_id");
+
+                    b.HasIndex("TiendaId", "UsuarioId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_miembros_tienda_id_usuario_id");
+
+                    b.ToTable("miembros", "hermes");
+                });
+
             modelBuilder.Entity("Hermes.Domain.Entities.MovimientoStock", b =>
                 {
                     b.Property<Guid>("Id")
@@ -855,6 +898,10 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("resuelto_en");
 
+                    b.Property<bool>("StockReservado")
+                        .HasColumnType("boolean")
+                        .HasColumnName("stock_reservado");
+
                     b.Property<Guid>("TiendaId")
                         .HasColumnType("uuid")
                         .HasColumnName("tienda_id");
@@ -976,6 +1023,10 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("max_productos");
 
+                    b.Property<int?>("MaxUsuarios")
+                        .HasColumnType("integer")
+                        .HasColumnName("max_usuarios");
+
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasMaxLength(40)
@@ -1011,6 +1062,7 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                             Codigo = "gratis",
                             MaxAlmacenamientoMb = 100,
                             MaxProductos = 15,
+                            MaxUsuarios = 1,
                             Nombre = "Gratis",
                             Orden = 1,
                             PrecioMensual = 0m
@@ -1022,6 +1074,7 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                             Codigo = "emprendedor",
                             MaxAlmacenamientoMb = 1000,
                             MaxProductos = 150,
+                            MaxUsuarios = 3,
                             Nombre = "Emprendedor",
                             Orden = 2,
                             PrecioMensual = 39m
@@ -1032,6 +1085,7 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                             Activo = true,
                             Codigo = "negocio",
                             MaxAlmacenamientoMb = 5000,
+                            MaxUsuarios = 10,
                             Nombre = "Negocio",
                             Orden = 3,
                             PrecioMensual = 89m
@@ -1167,6 +1221,11 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("activo");
 
+                    b.Property<string>("Correo")
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
+                        .HasColumnName("correo");
+
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasMaxLength(120)
@@ -1248,6 +1307,77 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_refresh_tokens_usuario_id");
 
                     b.ToTable("refresh_tokens", "hermes");
+                });
+
+            modelBuilder.Entity("Hermes.Domain.Entities.Rol", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("Activo")
+                        .HasColumnType("boolean")
+                        .HasColumnName("activo");
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)")
+                        .HasColumnName("descripcion");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("nombre");
+
+                    b.Property<Guid>("TiendaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tienda_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_roles");
+
+                    b.HasIndex("TiendaId", "Nombre")
+                        .IsUnique()
+                        .HasDatabaseName("ix_roles_tienda_id_nombre")
+                        .HasFilter("activo");
+
+                    b.ToTable("roles", "hermes");
+                });
+
+            modelBuilder.Entity("Hermes.Domain.Entities.RolPermiso", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Codigo")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)")
+                        .HasColumnName("codigo");
+
+                    b.Property<Guid>("RolId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("rol_id");
+
+                    b.Property<Guid>("TiendaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("tienda_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_rol_permisos");
+
+                    b.HasIndex("TiendaId")
+                        .HasDatabaseName("ix_rol_permisos_tienda_id");
+
+                    b.HasIndex("RolId", "Codigo")
+                        .IsUnique()
+                        .HasDatabaseName("ix_rol_permisos_rol_id_codigo");
+
+                    b.ToTable("rol_permisos", "hermes");
                 });
 
             modelBuilder.Entity("Hermes.Domain.Entities.Suscripcion", b =>
@@ -1406,6 +1536,10 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("creado_en");
 
+                    b.Property<bool>("DebeCambiarPassword")
+                        .HasColumnType("boolean")
+                        .HasColumnName("debe_cambiar_password");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(254)
@@ -1533,8 +1667,15 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("tienda_id");
 
+                    b.Property<Guid?>("UsuarioId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("usuario_id");
+
                     b.HasKey("Id")
                         .HasName("pk_ventas");
+
+                    b.HasIndex("UsuarioId")
+                        .HasDatabaseName("ix_ventas_usuario_id");
 
                     b.HasIndex("TiendaId", "ClaveIdempotencia")
                         .IsUnique()
@@ -1542,6 +1683,9 @@ namespace Hermes.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("TiendaId", "Fecha")
                         .HasDatabaseName("ix_ventas_tienda_id_fecha");
+
+                    b.HasIndex("TiendaId", "UsuarioId", "Fecha")
+                        .HasDatabaseName("ix_ventas_tienda_id_usuario_id_fecha");
 
                     b.ToTable("ventas", "hermes");
                 });
@@ -1779,6 +1923,34 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_instagram_publicaciones_tiendas_tienda_id");
                 });
 
+            modelBuilder.Entity("Hermes.Domain.Entities.MiembroTienda", b =>
+                {
+                    b.HasOne("Hermes.Domain.Entities.Rol", "Rol")
+                        .WithMany()
+                        .HasForeignKey("RolId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_miembros_roles_rol_id");
+
+                    b.HasOne("Hermes.Domain.Entities.Tienda", null)
+                        .WithMany()
+                        .HasForeignKey("TiendaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_miembros_tiendas_tienda_id");
+
+                    b.HasOne("Hermes.Domain.Entities.Usuario", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_miembros_usuarios_usuario_id");
+
+                    b.Navigation("Rol");
+
+                    b.Navigation("Usuario");
+                });
+
             modelBuilder.Entity("Hermes.Domain.Entities.MovimientoStock", b =>
                 {
                     b.HasOne("Hermes.Domain.Entities.Compra", null)
@@ -1957,6 +2129,33 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                     b.Navigation("Usuario");
                 });
 
+            modelBuilder.Entity("Hermes.Domain.Entities.Rol", b =>
+                {
+                    b.HasOne("Hermes.Domain.Entities.Tienda", null)
+                        .WithMany()
+                        .HasForeignKey("TiendaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_roles_tiendas_tienda_id");
+                });
+
+            modelBuilder.Entity("Hermes.Domain.Entities.RolPermiso", b =>
+                {
+                    b.HasOne("Hermes.Domain.Entities.Rol", null)
+                        .WithMany("Permisos")
+                        .HasForeignKey("RolId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_rol_permisos_roles_rol_id");
+
+                    b.HasOne("Hermes.Domain.Entities.Tienda", null)
+                        .WithMany()
+                        .HasForeignKey("TiendaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_rol_permisos_tiendas_tienda_id");
+                });
+
             modelBuilder.Entity("Hermes.Domain.Entities.Suscripcion", b =>
                 {
                     b.HasOne("Hermes.Domain.Entities.PagoPlan", null)
@@ -2027,6 +2226,12 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_ventas_tiendas_tienda_id");
+
+                    b.HasOne("Hermes.Domain.Entities.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_ventas_usuarios_usuario_id");
                 });
 
             modelBuilder.Entity("Hermes.Domain.Entities.VentaLinea", b =>
@@ -2082,6 +2287,11 @@ namespace Hermes.Infrastructure.Persistence.Migrations
                     b.Navigation("Fotos");
 
                     b.Navigation("Variantes");
+                });
+
+            modelBuilder.Entity("Hermes.Domain.Entities.Rol", b =>
+                {
+                    b.Navigation("Permisos");
                 });
 
             modelBuilder.Entity("Hermes.Domain.Entities.Usuario", b =>

@@ -5,6 +5,8 @@ using Hermes.Infrastructure.Imagenes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+using Hermes.Domain.Seguridad;
+
 namespace Hermes.Api.Controllers;
 
 [ApiController]
@@ -18,6 +20,7 @@ public class ImagenesController : ControllerBase
 
     // multipart/form-data con un campo "archivo". Devuelve las urls de los 3 tamaños.
     [HttpPost]
+    [Authorize(Policy = $"{Permisos.ProductosCrear}|{Permisos.ProductosEditar}|{Permisos.TiendaGestionar}|{Permisos.PlanGestionar}|{Permisos.InstagramGestionar}")]
     [RequestSizeLimit(ProcesadorImagenes.MaximoBytes + 64 * 1024)] // la foto + el sobre multipart
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(ImagenDto), StatusCodes.Status201Created)]
@@ -39,6 +42,7 @@ public class ImagenesController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = $"{Permisos.ProductosCrear}|{Permisos.ProductosEditar}|{Permisos.TiendaGestionar}|{Permisos.PlanGestionar}|{Permisos.InstagramGestionar}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Borrar(Guid id, CancellationToken ct)

@@ -252,6 +252,25 @@ public class ProductoTests : IDisposable
         Assert.Equal("Cartera Mía v2", (await s.Productos.ListarAsync(new(), default)).Items.Single().Nombre);
     }
 
+    [Fact]
+    public async Task La_pagina_numerada_trae_cada_tramo_sin_repetir_y_acota_una_pagina_fuera_de_rango()
+    {
+        await using var db = _bd.Contexto(_bd.TiendaA);
+        var s = Para(db, _bd.TiendaA);
+        for (var i = 1; i <= 5; i++) await s.Productos.CrearAsync(Dto($"Producto {i}"), default);
+
+        var p1 = await s.Productos.ListarAsync(new(Limite: 2, Pagina: 1), default);
+        var p2 = await s.Productos.ListarAsync(new(Limite: 2, Pagina: 2), default);
+        var p3 = await s.Productos.ListarAsync(new(Limite: 2, Pagina: 3), default);
+        var fuera = await s.Productos.ListarAsync(new(Limite: 2, Pagina: 99), default);
+
+        Assert.Equal((5, 3), (p1.Total, p1.TotalPaginas));
+        Assert.Equal([2, 2, 1], [p1.Items.Count, p2.Items.Count, p3.Items.Count]);
+        Assert.Equal(5, p1.Items.Concat(p2.Items).Concat(p3.Items).Select(i => i.Id).Distinct().Count());
+        Assert.Equal(3, fuera.Pagina); // se acota a la última
+        Assert.Equal(p3.Items.Select(i => i.Id), fuera.Items.Select(i => i.Id));
+    }
+
     // ───────────── Archivar ─────────────
 
     [Fact]

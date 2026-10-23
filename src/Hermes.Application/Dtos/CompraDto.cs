@@ -5,11 +5,12 @@ namespace Hermes.Application.Dtos;
 // ───────────── Proveedores ─────────────
 
 // Telefono: WhatsApp de Bolivia (con o sin +591); se guarda como +591XXXXXXXX.
-public record GuardarProveedorDto(string Nombre, string? Telefono = null, string? Notas = null);
+// Correo: opcional, se guarda en minúsculas.
+public record GuardarProveedorDto(string Nombre, string? Telefono = null, string? Notas = null, string? Correo = null);
 
 // PorPagar: lo que se le debe (compras no anuladas sin pagar). EnCamino: pedidos que todavía no llegaron.
 public record ProveedorDto(
-    Guid Id, string Nombre, string? Telefono, string? Notas, bool Activo, decimal PorPagar, int EnCamino, int Compras);
+    Guid Id, string Nombre, string? Telefono, string? Notas, bool Activo, decimal PorPagar, int EnCamino, int Compras, string? Correo = null);
 
 // Lo último que le pagamos (o pedimos) a este proveedor por cada producto.
 public record UltimoPrecioDto(Guid ProductoId, string Producto, decimal CostoUnitario, DateTimeOffset Fecha);

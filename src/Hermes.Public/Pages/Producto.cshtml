@@ -1,11 +1,11 @@
-@page "/{slug}/p/{id:guid}"
+﻿@page "/{slug}/p/{id:guid}"
 @model ProductoModel
 @{
     var t = Model.Tienda;
     var p = Model.Producto;
 }
 <header class="cabecera cabecera-chica">
-    <a class="volver" href="/@t.Slug" aria-label="Volver a @t.Nombre">←</a>
+    <a class="volver" href="/@t.Slug" aria-label="Volver a @t.Nombre"><svg class="icono" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" /></svg></a>
     <a class="cabecera-nombre" href="/@t.Slug">@t.Nombre</a>
     @await Html.PartialAsync("_EnlaceCarrito", t)
 </header>
@@ -73,9 +73,9 @@
             @if (Model.PuedePedir)
             {
                 <div class="cantidad" role="group" aria-label="Cantidad">
-                    <button type="button" id="menos" aria-label="Una menos">−</button>
+                    <button type="button" id="menos" aria-label="Una menos"><svg class="icono" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14" /></svg></button>
                     <output id="cantidad" aria-live="polite">1</output>
-                    <button type="button" id="mas" aria-label="Una más">+</button>
+                    <button type="button" id="mas" aria-label="Una más"><svg class="icono" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></button>
                 </div>
                 @* Sin JavaScript no hay carrito: queda solo el pedido directo por WhatsApp (publico.js muestra el botón). *@
                 <button type="button" id="agregar" class="boton boton-grande" hidden>Agregar al carrito</button>
@@ -87,4 +87,4 @@
     </section>
 </main>
 
-<script src="/js/publico.js" defer></script>
+<script src="/js/publico.js" asp-append-version="true" defer></script>

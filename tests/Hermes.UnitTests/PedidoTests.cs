@@ -37,7 +37,79 @@ public class PedidoTests : IDisposable
         var operaciones = new OperacionesStock(db, _reloj);
         var ventas = new VentaService(db, operaciones, almacen, sesion, _reloj);
         return new Duena(db, new ProductoService(db, imagenes, almacen, sesion, _reloj),
-            new StockService(db, operaciones, almacen, sesion), new PedidoService(db, ventas, sesion, _reloj));
+            new StockService(db, operaciones, almacen, sesion), new PedidoService(db, ventas, sesion, _reloj, operaciones));
+    }
+
+    private static async Task<int> StockDe(Duena d, ProductoDto p, int variante = 0)
+        => (await d.Stock.ObtenerAsync(p.Id, default)).Variantes[variante].Stock;
+
+    private async Task<(Duena Duena, ProductoDto Producto, Guid Pedido)> PedidoNuevo(int stock, int unidades)
+    {
+        var d = ComoDuena(_bd.TiendaA);
+        var p = await ConStock(d, "Cartera", stock);
+        await Pedir(Pedido((p.Variantes[0].Id, unidades)));
+        return (d, p, (await d.Pedidos.ListarAsync(new(), default)).Items.Single().Id);
+    }
+
+    [Fact]
+    public async Task Confirmar_aparta_el_stock_y_cancelar_lo_devuelve()
+    {
+        var (d, p, id) = await PedidoNuevo(5, 2);
+        Assert.Equal(5, await StockDe(d, p)); // Nuevo no toca el stock
+
+        await d.Pedidos.ConfirmarAsync(id, default);
+        Assert.Equal(3, await StockDe(ComoDuena(_bd.TiendaA), p));
+
+        await ComoDuena(_bd.TiendaA).Pedidos.CancelarAsync(id, new("Ya no lo quiere"), default);
+        Assert.Equal(5, await StockDe(ComoDuena(_bd.TiendaA), p));
+        Assert.False((await _bd.Contexto(_bd.TiendaA).Pedidos.SingleAsync()).StockReservado);
+    }
+
+    [Fact]
+    public async Task Cancelar_un_pedido_nuevo_no_mueve_el_stock()
+    {
+        var (d, p, id) = await PedidoNuevo(5, 2);
+        await d.Pedidos.CancelarAsync(id, new(null), default);
+        Assert.Equal(5, await StockDe(ComoDuena(_bd.TiendaA), p));
+    }
+
+    [Fact]
+    public async Task Confirmar_sin_stock_suficiente_falla_y_el_pedido_sigue_nuevo()
+    {
+        var (d, p, id) = await PedidoNuevo(2, 5);
+
+        await Assert.ThrowsAsync<StockInsuficienteException>(() => d.Pedidos.ConfirmarAsync(id, default));
+
+        var otra = ComoDuena(_bd.TiendaA);
+        Assert.Equal(EstadoPedido.Nuevo, (await otra.Pedidos.ObtenerAsync(id, default)).Estado);
+        Assert.Equal(2, await StockDe(otra, p));
+    }
+
+    [Fact]
+    public async Task Entregar_un_pedido_confirmado_descuenta_una_sola_vez()
+    {
+        var (d, p, id) = await PedidoNuevo(5, 2);
+        await d.Pedidos.ConfirmarAsync(id, default);
+
+        var entregado = await ComoDuena(_bd.TiendaA).Pedidos.EntregarAsync(id, new(MetodoPago.Efectivo), default);
+
+        Assert.Equal(EstadoPedido.Entregado, entregado.Estado);
+        Assert.Equal(3, await StockDe(ComoDuena(_bd.TiendaA), p));
+        Assert.False((await _bd.Contexto(_bd.TiendaA).Pedidos.SingleAsync()).StockReservado);
+    }
+
+    [Fact]
+    public async Task Si_la_venta_falla_al_entregar_el_pedido_vuelve_a_tener_el_stock_apartado()
+    {
+        var (d, p, id) = await PedidoNuevo(5, 2);
+        await d.Pedidos.ConfirmarAsync(id, default);
+        // Se desactiva la variante: la venta ya no puede salir.
+        await using (var db = _bd.Contexto(_bd.TiendaA)) { (await db.Variantes.SingleAsync()).Activa = false; await db.SaveChangesAsync(); }
+
+        await Assert.ThrowsAnyAsync<Exception>(() => ComoDuena(_bd.TiendaA).Pedidos.EntregarAsync(id, new(MetodoPago.Efectivo), default));
+
+        var pedido = await _bd.Contexto(_bd.TiendaA).Pedidos.SingleAsync();
+        Assert.Equal(EstadoPedido.Confirmado, pedido.Estado);
     }
 
     private PublicoService ComoPublico()

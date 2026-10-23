@@ -18,6 +18,8 @@ public class Plan
     public int? MaxProductos { get; set; }
     // Espacio de fotos (la suma de BytesGuardados de sus imágenes), en MB.
     public int? MaxAlmacenamientoMb { get; set; }
+    // Personas con acceso al panel a la vez: el dueño más su equipo activo (null = sin límite).
+    public int? MaxUsuarios { get; set; }
     // Desactivado: ya no se ofrece para contratar (las tiendas que lo tienen lo conservan).
     public bool Activo { get; set; } = true;
     public int Orden { get; set; }

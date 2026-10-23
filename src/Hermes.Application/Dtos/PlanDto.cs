@@ -3,7 +3,7 @@ using Hermes.Domain.Entities;
 namespace Hermes.Application.Dtos;
 
 // null en un límite = sin límite.
-public record PlanDto(Guid Id, string Codigo, string Nombre, decimal PrecioMensual, int? MaxProductos, int? MaxAlmacenamientoMb, bool Activo);
+public record PlanDto(Guid Id, string Codigo, string Nombre, decimal PrecioMensual, int? MaxProductos, int? MaxAlmacenamientoMb, bool Activo, int? MaxUsuarios = null);
 
 // Los planes que se pueden contratar, los meses permitidos y cómo pagar (texto que configura la plataforma).
 public record PlanesDto(IReadOnlyList<PlanDto> Planes, IReadOnlyList<int> Meses, string InstruccionesDePago);
@@ -38,4 +38,4 @@ public record PaginaDeTiendasDto(IReadOnlyList<AdminTiendaDto> Items, Guid? Sigu
 // Meses = null: sin vencimiento (cortesía o el plan gratis explícito).
 public record AsignarPlanDto(Guid PlanId, int? Meses = null);
 
-public record ActualizarPlanDto(decimal PrecioMensual, int? MaxProductos, int? MaxAlmacenamientoMb, bool Activo);
+public record ActualizarPlanDto(decimal PrecioMensual, int? MaxProductos, int? MaxAlmacenamientoMb, bool Activo, int? MaxUsuarios = null);

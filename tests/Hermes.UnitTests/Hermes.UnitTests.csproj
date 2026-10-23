@@ -24,6 +24,8 @@
     <ProjectReference Include="..\..\src\Hermes.Domain\Hermes.Domain.csproj" />
     <ProjectReference Include="..\..\src\Hermes.Application\Hermes.Application.csproj" />
     <ProjectReference Include="..\..\src\Hermes.Infrastructure\Hermes.Infrastructure.csproj" />
+    <!-- Solo para PermisosEnLosEndpointsTests: recorre los controllers por reflexión y exige permiso en cada acción. -->
+    <ProjectReference Include="..\..\src\Hermes.Api\Hermes.Api.csproj" />
   </ItemGroup>
 
 </Project>

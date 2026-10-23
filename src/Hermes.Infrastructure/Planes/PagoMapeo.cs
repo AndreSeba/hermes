@@ -9,7 +9,7 @@ internal static class PagoMapeo
 {
     public static DateTimeOffset Utc(DateTime d) => new(DateTime.SpecifyKind(d, DateTimeKind.Utc));
 
-    public static PlanDto ADto(Plan p) => new(p.Id, p.Codigo, p.Nombre, p.PrecioMensual, p.MaxProductos, p.MaxAlmacenamientoMb, p.Activo);
+    public static PlanDto ADto(Plan p) => new(p.Id, p.Codigo, p.Nombre, p.PrecioMensual, p.MaxProductos, p.MaxAlmacenamientoMb, p.Activo, p.MaxUsuarios);
 
     // `comprobante`: la imagen ya cargada (puede ser null si se borró). La dirección de la foto usa la tienda DEL PAGO.
     public static PagoPlanDto ADto(IAlmacenArchivos almacen, PagoPlan p, string plan, Imagen? comprobante) => new(

@@ -1,5 +1,7 @@
+using Hermes.Api.Security;
 using Hermes.Application.Dtos;
 using Hermes.Application.Interfaces;
+using Hermes.Domain.Seguridad;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,6 +18,7 @@ public class InicioController : ControllerBase
 
     // El resumen del período (el front manda el mes de quien mira: Desde incluido, Hasta excluido).
     [HttpGet]
+    [Authorize(Policy = Permisos.InicioVer)]
     public async Task<ActionResult<InicioDto>> Resumen([FromQuery] FiltroPeriodoDto periodo, CancellationToken ct)
-        => Ok(await _inicio.ResumenAsync(periodo, ct));
+        => Ok((await _inicio.ResumenAsync(periodo, ct)).SegunPermisos(User.Tiene));
 }

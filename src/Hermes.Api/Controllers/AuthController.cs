@@ -62,6 +62,18 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<PerfilDto>> Yo(CancellationToken ct)
         => Ok(await _authService.ObtenerPerfilAsync(User.ObtenerUsuarioId(), User.ObtenerTiendaId(), ct));
 
+    // Pide la contraseña actual: la cookie sola no alcanza para cambiarla. Las demás sesiones de la persona se cierran; esta sigue.
+    [HttpPost("cambiar-password")]
+    [Authorize]
+    [EnableRateLimiting(Limites.Auth)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CambiarPassword([FromBody] CambiarPasswordDto dto, CancellationToken ct)
+    {
+        await _authService.CambiarPasswordAsync(User.ObtenerUsuarioId(), Request.Cookies[CookieRefresh], dto, ct);
+        return NoContent();
+    }
+
     private SesionDto ConCookie(SesionEmitida emitida)
     {
         Response.Cookies.Append(CookieRefresh, emitida.RefreshToken, OpcionesCookie(emitida.RefreshExpiraEn));

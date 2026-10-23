@@ -8,4 +8,6 @@ public enum TipoMovimiento
     Venta,      // resta (M6)
     Devolucion, // suma: se anuló una venta (M6)
     Reversion,  // resta: se anuló una compra que ya se había recibido (M7)
+    Reserva,        // resta: la dueña confirmó un pedido de la tienda pública (queda apartado para el cliente)
+    LiberaReserva,  // suma: el pedido se canceló o se entregó (al entregar, la venta descuenta de nuevo)
 }

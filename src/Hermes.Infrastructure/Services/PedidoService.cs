@@ -3,6 +3,7 @@ using Hermes.Application.Dtos;
 using Hermes.Application.Exceptions;
 using Hermes.Application.Interfaces;
 using Hermes.Domain.Entities;
+using Hermes.Domain.Enums;
 using Hermes.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,13 +20,16 @@ public class PedidoService : IPedidoService
     private readonly IVentaService _ventas;
     private readonly ITiendaActual _sesion;
     private readonly TimeProvider _reloj;
+    private readonly IOperacionesStock? _stock;
 
-    public PedidoService(HermesDbContext db, IVentaService ventas, ITiendaActual sesion, TimeProvider reloj)
+    // `stock` es opcional solo para las pruebas viejas que no reservan: en la API siempre viene.
+    public PedidoService(HermesDbContext db, IVentaService ventas, ITiendaActual sesion, TimeProvider reloj, IOperacionesStock? stock = null)
     {
         _db = db;
         _ventas = ventas;
         _sesion = sesion;
         _reloj = reloj;
+        _stock = stock;
     }
 
     private Guid TiendaIdDeLaSesion() => _sesion.TiendaId ?? throw new SinTiendaEnSesionException();
@@ -91,18 +95,32 @@ public class PedidoService : IPedidoService
     {
         TiendaIdDeLaSesion();
         var pedido = await CargarAsync(id, ct);
+
+        // Confirmar aparta el stock (Reserva) en la misma transacción que el cambio de estado: si no alcanza, el
+        // pedido sigue Nuevo (409 "No alcanza el stock…"). Los productos sin control de stock no apartan nada.
+        await using var transaccion = await _db.Database.BeginTransactionAsync(ct);
         var cambiados = await _db.Pedidos.Where(p => p.Id == id && p.Estado == EstadoPedido.Nuevo)
-            .ExecuteUpdateAsync(s => s.SetProperty(p => p.Estado, EstadoPedido.Confirmado), ct);
+            .ExecuteUpdateAsync(s => s.SetProperty(p => p.Estado, EstadoPedido.Confirmado).SetProperty(p => p.StockReservado, _stock is not null), ct);
         if (cambiados == 0) throw YaResuelto(await EstadoAsync(id, ct) ?? pedido.Estado);
+        if (_stock is not null)
+        {
+            await _stock.AplicarAsync(TipoMovimiento.Reserva, Lineas(pedido, -1), $"Pedido #{pedido.Numero}", null, ignorarSinControl: true, ct);
+            await _db.SaveChangesAsync(ct);
+        }
+        await transaccion.CommitAsync(ct);
+        _db.ChangeTracker.Clear();
         return await ObtenerAsync(id, ct);
     }
 
     public async Task<PedidoDto> CancelarAsync(Guid id, CancelarPedidoDto dto, CancellationToken ct)
     {
         TiendaIdDeLaSesion();
-        await CargarAsync(id, ct);
+        var pedido = await CargarAsync(id, ct);
         var motivo = Validacion.TextoOpcional(dto.Motivo, 300, "El motivo");
         var ahora = Ahora;
+
+        // Si estaba confirmado, el stock apartado vuelve (LiberaReserva) en la misma transacción.
+        await using var transaccion = await _db.Database.BeginTransactionAsync(ct);
         var cambiados = await _db.Pedidos
             .Where(p => p.Id == id && (p.Estado == EstadoPedido.Nuevo || p.Estado == EstadoPedido.Confirmado))
             .ExecuteUpdateAsync(s => s
@@ -110,8 +128,43 @@ public class PedidoService : IPedidoService
                 .SetProperty(p => p.MotivoCancelacion, motivo)
                 .SetProperty(p => p.ResueltoEn, ahora), ct);
         if (cambiados == 0) throw YaResuelto((await EstadoAsync(id, ct))!.Value);
+        await LiberarReservaAsync(pedido, ct); // la fila quedó bloqueada por el UPDATE: el valor de StockReservado ya no cambia
+        await transaccion.CommitAsync(ct);
+        _db.ChangeTracker.Clear();
         return await ObtenerAsync(id, ct);
     }
+
+    // Si el pedido tiene el stock apartado, lo devuelve y apaga la marca. Va dentro de una transacción abierta por quien llama.
+    private async Task<bool> LiberarReservaAsync(Pedido pedido, CancellationToken ct)
+    {
+        if (_stock is null) return false;
+        var reservado = await _db.Pedidos.AsNoTracking().Where(p => p.Id == pedido.Id).Select(p => p.StockReservado).FirstAsync(ct);
+        if (!reservado) return false;
+        await _stock.AplicarAsync(TipoMovimiento.LiberaReserva, Lineas(pedido, 1), $"Pedido #{pedido.Numero}", null, ignorarSinControl: true, ct);
+        await _db.SaveChangesAsync(ct);
+        await _db.Pedidos.Where(p => p.Id == pedido.Id).ExecuteUpdateAsync(s => s.SetProperty(p => p.StockReservado, false), ct);
+        return true;
+    }
+
+    // Compensación de Entregar cuando la venta no salió: si todavía alcanza el stock, el pedido vuelve a tenerlo apartado.
+    // Si ya no alcanza (otra venta se lo llevó en el medio), queda sin apartar y la dueña lo ve al reintentar.
+    private async Task VolverAReservarAsync(Pedido pedido, CancellationToken ct)
+    {
+        try
+        {
+            _db.ChangeTracker.Clear();
+            await using var t = await _db.Database.BeginTransactionAsync(ct);
+            await _stock!.AplicarAsync(TipoMovimiento.Reserva, Lineas(pedido, -1), $"Pedido #{pedido.Numero}", null, ignorarSinControl: true, ct);
+            await _db.SaveChangesAsync(ct);
+            await _db.Pedidos.Where(p => p.Id == pedido.Id).ExecuteUpdateAsync(s => s.SetProperty(p => p.StockReservado, true), ct);
+            await t.CommitAsync(ct);
+        }
+        catch (DominioException) { /* ya no alcanza: queda sin apartar */ }
+        finally { _db.ChangeTracker.Clear(); }
+    }
+
+    private static List<LineaMovimiento> Lineas(Pedido p, int signo)
+        => p.Lineas.OrderBy(l => l.Orden).Select(l => new LineaMovimiento(l.VarianteId, signo * l.Cantidad)).ToList();
 
     // La venta se registra con IVentaService (stock con candado, todo o nada) usando el Id del pedido como clave de
     // idempotencia: si se corta la conexión y se reintenta, devuelve la MISMA venta y no descuenta dos veces. Recién
@@ -124,8 +177,27 @@ public class PedidoService : IPedidoService
         var pedido = await CargarAsync(id, ct);
         if (pedido.Estado is EstadoPedido.Entregado or EstadoPedido.Cancelado) throw YaResuelto(pedido.Estado);
 
+        // Si el stock está apartado, se libera ANTES de vender (la venta lo descuenta de nuevo; si no, saldría dos veces).
+        // VentaService abre su propia transacción, por eso esto va aparte. Si la venta falla, se vuelve a apartar.
+        var estabaReservado = false;
+        await using (var liberar = await _db.Database.BeginTransactionAsync(ct))
+        {
+            estabaReservado = await LiberarReservaAsync(pedido, ct);
+            await liberar.CommitAsync(ct);
+        }
+        _db.ChangeTracker.Clear();
+
         var lineas = pedido.Lineas.OrderBy(l => l.Orden).Select(l => new LineaVentaDto(l.VarianteId, l.Cantidad)).ToList();
-        var venta = (await _ventas.RegistrarAsync(new RegistrarVentaDto(pedido.Id, lineas, dto.MetodoPago, pedido.ClienteNombre), ct)).Venta;
+        VentaDto venta;
+        try
+        {
+            venta = (await _ventas.RegistrarAsync(new RegistrarVentaDto(pedido.Id, lineas, dto.MetodoPago, pedido.ClienteNombre), ct)).Venta;
+        }
+        catch when (estabaReservado)
+        {
+            await VolverAReservarAsync(pedido, ct);
+            throw;
+        }
 
         var ahora = Ahora;
         var cambiados = await _db.Pedidos

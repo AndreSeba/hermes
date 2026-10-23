@@ -93,10 +93,25 @@ public class PublicoService : IPublicoService
                 p.ControlaStock,
             })
             .Select(x => new { x.Id, Prioridad = mostrarDisponibilidad && x.ControlaStock && x.Total <= 0 ? 1 : 0 });
-        if (cursor is { } c)
-            conPrioridad = conPrioridad.Where(x => x.Prioridad > c.Prioridad || (x.Prioridad == c.Prioridad && x.Id.CompareTo(c.Id) < 0));
-
-        var pagina = await conPrioridad.OrderBy(x => x.Prioridad).ThenByDescending(x => x.Id).Take(limite + 1).ToListAsync(ct);
+        // Página numerada: Skip + cantidad de páginas (solo se cuenta, nunca se muestra cuántos productos hay en total).
+        var numeroPagina = 1;
+        var totalPaginas = 1;
+        List<(int Prioridad, Guid Id)> pagina;
+        if (filtro.Pagina is { } pedida)
+        {
+            var cuantos = await conPrioridad.CountAsync(ct);
+            totalPaginas = Math.Max(1, (int)Math.Ceiling(cuantos / (double)limite));
+            numeroPagina = Math.Clamp(pedida, 1, totalPaginas);
+            pagina = (await conPrioridad.OrderBy(x => x.Prioridad).ThenByDescending(x => x.Id)
+                .Skip((numeroPagina - 1) * limite).Take(limite + 1).ToListAsync(ct)).Select(x => (x.Prioridad, x.Id)).ToList();
+        }
+        else
+        {
+            if (cursor is { } c)
+                conPrioridad = conPrioridad.Where(x => x.Prioridad > c.Prioridad || (x.Prioridad == c.Prioridad && x.Id.CompareTo(c.Id) < 0));
+            pagina = (await conPrioridad.OrderBy(x => x.Prioridad).ThenByDescending(x => x.Id).Take(limite + 1).ToListAsync(ct))
+                .Select(x => (x.Prioridad, x.Id)).ToList();
+        }
         var hayMas = pagina.Count > limite;
         if (hayMas) pagina.RemoveAt(pagina.Count - 1);
         var ids = pagina.Select(x => x.Id).ToList();
@@ -122,7 +137,7 @@ public class PublicoService : IPublicoService
                 p.Categoria, mostrarDisponibilidad ? !p.ControlaStock || disponibles.Contains(p.Id) : null);
         }).ToList();
 
-        return new PaginaPublicaDto(items, hayMas ? $"{pagina[^1].Prioridad}.{pagina[^1].Id}" : null);
+        return new PaginaPublicaDto(items, hayMas ? $"{pagina[^1].Prioridad}.{pagina[^1].Id}" : null, numeroPagina, totalPaginas);
     }
 
     public async Task<ProductoPublicoDto> ProductoAsync(string slug, Guid productoId, CancellationToken ct)

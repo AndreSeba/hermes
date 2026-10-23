@@ -3,6 +3,8 @@ using Hermes.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+using Hermes.Domain.Seguridad;
+
 namespace Hermes.Api.Controllers;
 
 [ApiController]
@@ -16,11 +18,13 @@ public class GastosController : ControllerBase
 
     // Más nuevos primero, por cursor. `Total` es de todo el período, no de la página.
     [HttpGet]
+    [Authorize(Policy = Permisos.GastosVer)]
     public async Task<ActionResult<PaginaDeGastosDto>> Listar([FromQuery] FiltroGastosDto filtro, CancellationToken ct)
         => Ok(await _gastos.ListarAsync(filtro, ct));
 
     // 201 si se registró; 200 si esa ClaveIdempotencia ya había registrado el gasto (se devuelve el mismo).
     [HttpPost]
+    [Authorize(Policy = Permisos.GastosGestionar)]
     [ProducesResponseType(typeof(GastoDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(GastoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -31,6 +35,7 @@ public class GastosController : ControllerBase
     }
 
     [HttpPost("{id:guid}/anular")]
+    [Authorize(Policy = Permisos.GastosGestionar)]
     [ProducesResponseType(typeof(GastoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]

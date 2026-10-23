@@ -15,6 +15,10 @@ public class JwtTokenService
     // El rol de plataforma (administrador). La política "Admin" de la API exige este claim.
     public const string ClaimRol = "rol";
     public const string RolAdministrador = "admin";
+    // Un claim por permiso de la persona en ESTA tienda (el dueño lleva todos): la API los exige en cada pedido.
+    public const string ClaimPermiso = "permiso";
+    // Cuándo se emitió, en milisegundos (Unix): lo que compara SesionesRevocadas (el nbf estándar solo llega al segundo).
+    public const string ClaimEmitido = "emi";
 
     private readonly JwtOptions _opciones;
     private readonly TimeProvider _reloj;
@@ -25,7 +29,7 @@ public class JwtTokenService
         _reloj = reloj;
     }
 
-    public (string Token, DateTimeOffset ExpiraEn) EmitirAccessToken(Usuario usuario, Tienda tienda)
+    public (string Token, DateTimeOffset ExpiraEn) EmitirAccessToken(Usuario usuario, Tienda tienda, IEnumerable<string> permisos)
     {
         var ahora = _reloj.GetUtcNow();
         var expira = ahora.AddMinutes(_opciones.ExpiracionMinutos);
@@ -39,7 +43,9 @@ public class JwtTokenService
             new(JwtRegisteredClaimNames.Name, usuario.Nombre),
             new(ClaimTienda, tienda.Id.ToString()),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new(ClaimEmitido, ahora.ToUnixTimeMilliseconds().ToString(System.Globalization.CultureInfo.InvariantCulture), ClaimValueTypes.Integer64),
         };
+        claims.AddRange(permisos.Select(p => new Claim(ClaimPermiso, p)));
         // El rol de plataforma SOLO viaja en el token si en la base el usuario es administrador (se decide al emitirlo, no lo
         // elige el cliente). Dura lo que el token (15 min): si se le quita el rol, deja de renovarse.
         if (usuario.EsAdministrador) claims.Add(new Claim(ClaimRol, RolAdministrador));

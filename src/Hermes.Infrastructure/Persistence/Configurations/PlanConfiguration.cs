@@ -23,9 +23,9 @@ public class PlanConfiguration : IEntityTypeConfiguration<Plan>
         // ⚠️ PRECIOS PROVISIONALES: el plan pide verificar los de la competencia antes de fijarlos. El administrador los
         // cambia desde el panel (PUT /api/v1/admin/planes/{id}); esto es solo el punto de partida.
         builder.HasData(
-            new Plan { Id = IdGratis, Codigo = Plan.CodigoGratis, Nombre = "Gratis", PrecioMensual = 0, MaxProductos = 15, MaxAlmacenamientoMb = 100, Orden = 1 },
-            new Plan { Id = IdEmprendedor, Codigo = Plan.CodigoEmprendedor, Nombre = "Emprendedor", PrecioMensual = 39, MaxProductos = 150, MaxAlmacenamientoMb = 1000, Orden = 2 },
-            new Plan { Id = IdNegocio, Codigo = Plan.CodigoNegocio, Nombre = "Negocio", PrecioMensual = 89, MaxProductos = null, MaxAlmacenamientoMb = 5000, Orden = 3 });
+            new Plan { Id = IdGratis, Codigo = Plan.CodigoGratis, Nombre = "Gratis", PrecioMensual = 0, MaxProductos = 15, MaxAlmacenamientoMb = 100, MaxUsuarios = 1, Orden = 1 },
+            new Plan { Id = IdEmprendedor, Codigo = Plan.CodigoEmprendedor, Nombre = "Emprendedor", PrecioMensual = 39, MaxProductos = 150, MaxAlmacenamientoMb = 1000, MaxUsuarios = 3, Orden = 2 },
+            new Plan { Id = IdNegocio, Codigo = Plan.CodigoNegocio, Nombre = "Negocio", PrecioMensual = 89, MaxProductos = null, MaxAlmacenamientoMb = 5000, MaxUsuarios = 10, Orden = 3 });
     }
 }
 

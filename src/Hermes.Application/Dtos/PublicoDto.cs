@@ -29,10 +29,12 @@ public record ProductoPublicoDto(
     Guid Id, string Nombre, string? Descripcion, decimal? Precio, string? Categoria, bool? Disponible,
     IReadOnlyList<ImagenDto> Fotos, IReadOnlyList<VariantePublicaDto> Variantes);
 
-public record FiltroPublicoDto(string? Buscar = null, Guid? CategoriaId = null, string? Cursor = null, int? Limite = null);
+// `Pagina` (desde 1) pide una página numerada y tiene prioridad sobre el cursor.
+public record FiltroPublicoDto(string? Buscar = null, Guid? CategoriaId = null, string? Cursor = null, int? Limite = null, int? Pagina = null);
 
 // Lo disponible primero y los agotados al final. Siguiente: cursor opaco.
-public record PaginaPublicaDto(IReadOnlyList<ProductoPublicoResumenDto> Items, string? Siguiente);
+// Pagina / TotalPaginas solo con una página numerada (cantidad de páginas, no de productos: el total exacto no hace falta).
+public record PaginaPublicaDto(IReadOnlyList<ProductoPublicoResumenDto> Items, string? Siguiente, int Pagina = 1, int TotalPaginas = 1);
 
 // ───────────── Carrito y pedido (el carrito vive en el navegador; acá se revisa y se manda) ─────────────
 // OJO: "Unidades" y no "Cantidad" a propósito: la prueba de "lo que nunca sale" prohíbe esa palabra en todo DTO público

@@ -212,12 +212,14 @@ public class AdminService : IAdminService
         var precio = Validacion.Monto(dto.PrecioMensual, "El precio", permitirCero: true);
         if (dto.MaxProductos is < 1 or > 1_000_000) throw new ValidacionException("El máximo de productos tiene que estar entre 1 y 1.000.000 (o vacío, sin límite).");
         if (dto.MaxAlmacenamientoMb is < 1 or > 1_000_000) throw new ValidacionException("El espacio de fotos tiene que estar entre 1 y 1.000.000 MB (o vacío, sin límite).");
+        if (dto.MaxUsuarios is < 1 or > 1_000) throw new ValidacionException("La cantidad de personas tiene que estar entre 1 y 1.000 (o vacío, sin límite).");
         if (plan.Codigo == Plan.CodigoGratis && (precio != 0 || !dto.Activo)) throw new ValidacionException("El plan Gratis es gratis y siempre está activo.");
         if (plan.Codigo != Plan.CodigoGratis && precio <= 0) throw new ValidacionException("Un plan pago tiene que tener un precio mayor a 0.");
 
         plan.PrecioMensual = precio;
         plan.MaxProductos = dto.MaxProductos;
         plan.MaxAlmacenamientoMb = dto.MaxAlmacenamientoMb;
+        plan.MaxUsuarios = dto.MaxUsuarios;
         plan.Activo = dto.Activo;
         await _db.SaveChangesAsync(ct);
         return PagoMapeo.ADto(plan);

@@ -3,6 +3,8 @@ using Hermes.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+using Hermes.Domain.Seguridad;
+
 namespace Hermes.Api.Controllers;
 
 // El plan de la tienda de la sesión: ver el suyo, ver los que hay y pedir uno (el pago es fuera de la app: QR o transferencia).
@@ -22,6 +24,7 @@ public class PlanesController : ControllerBase
     public async Task<ActionResult<MiPlanDto>> MiPlan(CancellationToken ct) => Ok(await _planes.MiPlanAsync(ct));
 
     [HttpPost("api/v1/plan/solicitar")]
+    [Authorize(Policy = Permisos.PlanGestionar)]
     [ProducesResponseType(typeof(PagoPlanDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -29,5 +32,6 @@ public class PlanesController : ControllerBase
         => StatusCode(StatusCodes.Status201Created, await _planes.SolicitarAsync(dto, ct));
 
     [HttpGet("api/v1/plan/pagos")]
+    [Authorize(Policy = Permisos.PlanGestionar)]
     public async Task<ActionResult<IReadOnlyList<PagoPlanDto>>> MisPagos(CancellationToken ct) => Ok(await _planes.MisPagosAsync(ct));
 }

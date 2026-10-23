@@ -15,6 +15,8 @@ public interface IVentaService
     Task<IReadOnlyList<VentaDiaDto>> PorDiaAsync(FiltroPorDiaDto filtro, CancellationToken ct);
     // Los productos que más unidades vendieron en el período (1..20), con su ganancia.
     Task<IReadOnlyList<MasVendidoDto>> MasVendidosAsync(FiltroMasVendidosDto filtro, CancellationToken ct);
+    // Lo vendido por cada persona en el período (la que registró cada venta), de más a menos. Las anuladas no cuentan.
+    Task<IReadOnlyList<VentaVendedorDto>> PorVendedorAsync(FiltroPeriodoDto filtro, CancellationToken ct);
     // Devuelve el stock de lo que se había descontado. Una venta anulada no se puede anular otra vez (409).
     Task<VentaDto> AnularAsync(Guid id, CancellationToken ct);
     Task<PaginaDeVendiblesDto> ProductosParaVenderAsync(FiltroVendiblesDto filtro, CancellationToken ct);

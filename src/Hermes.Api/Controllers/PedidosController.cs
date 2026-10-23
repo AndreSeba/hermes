@@ -3,6 +3,8 @@ using Hermes.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+using Hermes.Domain.Seguridad;
+
 namespace Hermes.Api.Controllers;
 
 // Los pedidos que llegan del carrito de la tienda pública. Los crea el sitio público (Hermes.Public), no esta API.
@@ -17,21 +19,25 @@ public class PedidosController : ControllerBase
 
     // Más nuevos primero, por cursor. Vista: Pendientes (por defecto), Entregados, Cancelados o Todos.
     [HttpGet]
+    [Authorize(Policy = Permisos.PedidosVer)]
     public async Task<ActionResult<PaginaDePedidosDto>> Listar([FromQuery] FiltroPedidosDto filtro, CancellationToken ct)
         => Ok(await _pedidos.ListarAsync(filtro, ct));
 
     // Cuántos esperan (para el aviso del menú y del Inicio).
     [HttpGet("resumen")]
+    [Authorize(Policy = Permisos.PedidosVer)]
     public async Task<ActionResult<ResumenPedidosDto>> Resumen(CancellationToken ct)
         => Ok(await _pedidos.ResumenAsync(ct));
 
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = Permisos.PedidosVer)]
     [ProducesResponseType(typeof(PedidoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<PedidoDto>> Obtener(Guid id, CancellationToken ct)
         => Ok(await _pedidos.ObtenerAsync(id, ct));
 
     [HttpPost("{id:guid}/confirmar")]
+    [Authorize(Policy = Permisos.PedidosGestionar)]
     [ProducesResponseType(typeof(PedidoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -39,6 +45,7 @@ public class PedidosController : ControllerBase
         => Ok(await _pedidos.ConfirmarAsync(id, ct));
 
     [HttpPost("{id:guid}/cancelar")]
+    [Authorize(Policy = Permisos.PedidosGestionar)]
     [ProducesResponseType(typeof(PedidoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -47,6 +54,7 @@ public class PedidosController : ControllerBase
 
     // Registra la venta (descuenta el stock) y lo marca entregado. Sin stock suficiente: 409 y el pedido no cambia.
     [HttpPost("{id:guid}/entregar")]
+    [Authorize(Policy = Permisos.PedidosGestionar)]
     [ProducesResponseType(typeof(PedidoDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

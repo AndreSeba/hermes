@@ -1,4 +1,4 @@
-// La tienda pública funciona sin JavaScript (el pedido sale por WhatsApp con la primera variante y cantidad 1). Esto la
+﻿// La tienda pública funciona sin JavaScript (el pedido sale por WhatsApp con la primera variante y cantidad 1). Esto la
 // mejora: cambiar la foto grande, la cantidad y la variante, y el CARRITO (vive en este navegador, una lista por tienda).
 // Todo lo que viene de la tienda (nombres) se escribe con textContent, nunca como HTML.
 (function () {
@@ -10,6 +10,25 @@
   // "Bs 180" si es redondo, "Bs 58,50" si no (igual que el servidor: Formato.Bs).
   function bs(monto) {
     return 'Bs ' + (Number.isInteger(monto) ? String(monto) : monto.toFixed(2).replace('.', ','));
+  }
+
+  // Íconos de línea para los botones que arma el JavaScript (nunca caracteres sueltos como − o +).
+  var TRAZOS = { menos: 'M5 12h14', mas: 'M12 5v14M5 12h14' };
+  function icono(nombre) {
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'icono');
+    svg.setAttribute('width', '20');
+    svg.setAttribute('height', '20');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '2.2');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('aria-hidden', 'true');
+    var trazo = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    trazo.setAttribute('d', TRAZOS[nombre]);
+    svg.appendChild(trazo);
+    return svg;
   }
 
   // ───────────── El carrito en el navegador ─────────────
@@ -38,6 +57,167 @@
     });
   }
   contar();
+
+  // ───────────── Vista rápida del carrito (panel con miniaturas) ─────────────
+  // Se abre al tocar "Carrito" en la cabecera; en la propia página del carrito el enlace navega normal.
+  var panel = document.getElementById('mini-carrito');
+  if (panel && !document.getElementById('carrito')) vistaRapida(panel);
+
+  function vistaRapida(raiz) {
+    var slug = raiz.getAttribute('data-mini');
+    var conPrecios = raiz.getAttribute('data-precios') === 'si';
+    var fondo = document.querySelector('[data-mini-fondo]');
+    var lista = raiz.querySelector('[data-mini-lista]');
+    var vacio = raiz.querySelector('[data-mini-vacio]');
+    var aviso = raiz.querySelector('[data-mini-aviso]');
+    var pie = raiz.querySelector('[data-mini-pie]');
+    var totalEl = raiz.querySelector('[data-mini-total]');
+    var estado = {}; // varianteId → cómo está hoy (precio, disponible, foto)
+    var abierto = false;
+    var solicitud = 0;
+
+    function abrir() {
+      abierto = true;
+      raiz.hidden = false;
+      fondo.hidden = false;
+      document.body.style.overflow = 'hidden';
+      pintar();
+      revisar();
+      raiz.querySelector('[data-mini-cerrar]').focus();
+    }
+    function cerrar() {
+      abierto = false;
+      raiz.hidden = true;
+      fondo.hidden = true;
+      document.body.style.overflow = '';
+      var enlace = document.querySelector('[data-carrito]');
+      if (enlace) enlace.focus();
+    }
+
+    document.querySelectorAll('[data-carrito]').forEach(function (a) {
+      a.addEventListener('click', function (ev) {
+        if (ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.button === 1) return; // "abrir en otra pestaña" sigue funcionando
+        ev.preventDefault();
+        abrir();
+      });
+    });
+    // Otros botones (el "Ver carrito" de la página del producto) piden abrirlo con este evento.
+    document.addEventListener('hermes:abrir-carrito', abrir);
+    fondo.addEventListener('click', cerrar);
+    raiz.querySelector('[data-mini-cerrar]').addEventListener('click', cerrar);
+    document.addEventListener('keydown', function (ev) { if (abierto && ev.key === 'Escape') cerrar(); });
+
+    // Precio y foto de hoy (lo mismo que la página del carrito); lo que ya no se vende se saca avisando.
+    function revisar() {
+      var items = leer(slug);
+      if (items.length === 0) return;
+      var mia = ++solicitud;
+      fetch('/' + slug + '/carrito/revisar', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, cache: 'no-store',
+        body: JSON.stringify({ variantes: items.map(function (x) { return x.v; }) }),
+      }).then(function (r) { if (!r.ok) throw new Error(); return r.json(); }).then(function (datos) {
+        if (mia !== solicitud) return;
+        estado = {};
+        datos.articulos.forEach(function (a) { estado[a.varianteId] = a; });
+        var fuera = items.filter(function (x) { return !estado[x.v]; });
+        if (fuera.length > 0) {
+          guardar(slug, items.filter(function (x) { return estado[x.v]; }));
+          aviso.hidden = false;
+          aviso.textContent = 'Sacamos lo que ya no está a la venta: ' + fuera.map(function (x) { return x.n; }).join(', ') + '.';
+        } else aviso.hidden = true;
+        pintar();
+      }).catch(function () { /* sin red: se muestra lo guardado, sin fotos ni precios al día */ });
+    }
+
+    function pintar() {
+      var items = leer(slug);
+      lista.textContent = '';
+      vacio.hidden = items.length > 0;
+      pie.hidden = items.length === 0;
+      totalEl.hidden = true;
+      var total = 0;
+      items.forEach(function (x) {
+        var hoy = estado[x.v] || {};
+        var li = document.createElement('li');
+        li.className = 'linea' + (hoy.disponible === false ? ' linea-agotada' : '');
+
+        var img = document.createElement(hoy.foto ? 'img' : 'span');
+        img.className = 'linea-foto';
+        if (hoy.foto) { img.src = hoy.foto.miniatura; img.alt = ''; img.width = 56; img.height = 56; }
+        li.appendChild(img);
+
+        var datos = document.createElement('div');
+        datos.className = 'linea-datos';
+        var nombre = document.createElement('a');
+        nombre.className = 'linea-nombre';
+        nombre.href = '/' + slug + '/p/' + (hoy.productoId || x.p);
+        nombre.textContent = hoy.nombre || x.n;
+        datos.appendChild(nombre);
+        var opcion = hoy.variante !== undefined ? hoy.variante : x.o;
+        if (opcion) {
+          var o = document.createElement('span');
+          o.className = 'linea-opcion';
+          o.textContent = opcion;
+          datos.appendChild(o);
+        }
+        if (hoy.disponible === false) {
+          var ag = document.createElement('span');
+          ag.className = 'linea-agotado';
+          ag.textContent = 'Se agotó';
+          datos.appendChild(ag);
+        }
+        if (typeof hoy.precio === 'number') {
+          total += hoy.precio * x.u;
+          var pr = document.createElement('span');
+          pr.className = 'linea-precio';
+          pr.textContent = bs(hoy.precio * x.u);
+          datos.appendChild(pr);
+        }
+
+        var acciones = document.createElement('div');
+        acciones.className = 'linea-acciones';
+        var cant = document.createElement('div');
+        cant.className = 'cantidad cantidad-chica';
+        cant.setAttribute('role', 'group');
+        cant.setAttribute('aria-label', 'Cantidad de ' + x.n);
+        cant.appendChild(boton('menos', 'Una menos', function () { cambiar(x.v, -1); }));
+        var out = document.createElement('output');
+        out.textContent = String(x.u);
+        cant.appendChild(out);
+        cant.appendChild(boton('mas', 'Una más', function () { cambiar(x.v, 1); }));
+        acciones.appendChild(cant);
+        var quitar = boton('Quitar', 'Quitar ' + x.n + ' del carrito', function () { guardar(slug, leer(slug).filter(function (i) { return i.v !== x.v; })); pintar(); });
+        quitar.className = 'quitar';
+        acciones.appendChild(quitar);
+        datos.appendChild(acciones);
+
+        li.appendChild(datos);
+        lista.appendChild(li);
+      });
+      if (conPrecios && total > 0) {
+        totalEl.hidden = false;
+        totalEl.textContent = 'Total: ' + bs(Math.round(total * 100) / 100);
+      }
+    }
+
+    function boton(texto, etiqueta, accion) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      if (TRAZOS[texto]) b.appendChild(icono(texto)); else b.textContent = texto;
+      b.setAttribute('aria-label', etiqueta);
+      b.addEventListener('click', accion);
+      return b;
+    }
+
+    function cambiar(id, delta) {
+      var items = leer(slug);
+      var x = items.find(function (i) { return i.v === id; });
+      if (!x) return;
+      x.u = Math.max(1, Math.min(MAXIMO_UNIDADES, x.u + delta));
+      guardar(slug, items);
+      pintar();
+    }
+  }
 
   // ───────────── Página del producto ─────────────
   var foto = document.getElementById('foto-principal');
@@ -125,6 +305,12 @@
       var a = document.createElement('a');
       a.href = '/' + d.slug + '/carrito';
       a.textContent = 'Ver carrito';
+      // Abre el panel con los productos; sin él (o con ctrl+clic) el enlace lleva a la página del carrito.
+      a.addEventListener('click', function (ev) {
+        if (ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.button === 1 || !document.getElementById('mini-carrito')) return;
+        ev.preventDefault();
+        document.dispatchEvent(new Event('hermes:abrir-carrito'));
+      });
       agregado.appendChild(a);
     }
   }
@@ -251,11 +437,11 @@
         cant.className = 'cantidad cantidad-chica';
         cant.setAttribute('role', 'group');
         cant.setAttribute('aria-label', 'Cantidad de ' + x.n);
-        cant.appendChild(boton('−', 'Una menos', function () { cambiar(x.v, -1); }));
+        cant.appendChild(boton('menos', 'Una menos', function () { cambiar(x.v, -1); }));
         var out = document.createElement('output');
         out.textContent = String(x.u);
         cant.appendChild(out);
-        cant.appendChild(boton('+', 'Una más', function () { cambiar(x.v, 1); }));
+        cant.appendChild(boton('mas', 'Una más', function () { cambiar(x.v, 1); }));
         acciones.appendChild(cant);
         var quitar = boton('Quitar', 'Quitar ' + x.n + ' del carrito', function () { sacar(x.v); });
         quitar.className = 'quitar';
@@ -276,7 +462,7 @@
     function boton(texto, etiqueta, accion) {
       var b = document.createElement('button');
       b.type = 'button';
-      b.textContent = texto;
+      if (TRAZOS[texto]) b.appendChild(icono(texto)); else b.textContent = texto;
       b.setAttribute('aria-label', etiqueta);
       b.addEventListener('click', accion);
       return b;

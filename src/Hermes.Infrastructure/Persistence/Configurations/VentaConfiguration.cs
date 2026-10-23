@@ -14,6 +14,10 @@ public class VentaConfiguration : IEntityTypeConfiguration<Venta>
 
         builder.HasOne<Tienda>().WithMany()
             .HasForeignKey(v => v.TiendaId).OnDelete(DeleteBehavior.Restrict);
+        // Quién la registró: una persona nunca se borra (se desactiva), así que nada en cascada.
+        builder.HasOne<Usuario>().WithMany()
+            .HasForeignKey(v => v.UsuarioId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(v => new { v.TiendaId, v.UsuarioId, v.Fecha });
 
         // Listados por período.
         builder.HasIndex(v => new { v.TiendaId, v.Fecha });

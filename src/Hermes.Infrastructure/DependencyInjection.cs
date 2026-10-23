@@ -32,6 +32,7 @@ public static class DependencyInjection
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.AddSingleton<JwtTokenService>();
         services.AddSingleton<BloqueoDeLogin>();
+        services.AddSingleton<ISesionesRevocadas, SesionesRevocadas>();
 
         // Dónde viven las fotos (Almacenamiento:Tipo): "Base" (tabla `archivos`, hoy) o "R2" (Cloudflare R2). Ningún servicio
         // cambia: todos usan IAlmacenArchivos. Para pasar a R2: comando `copiar-fotos-a-r2` y recién después cambiar el tipo.
@@ -77,6 +78,8 @@ public static class DependencyInjection
         services.AddScoped<ITiendaService, TiendaService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<ICategoriaService, CategoriaService>();
+        services.AddScoped<IRolService, RolService>();
+        services.AddScoped<IEquipoService, EquipoService>();
 
         return services;
     }

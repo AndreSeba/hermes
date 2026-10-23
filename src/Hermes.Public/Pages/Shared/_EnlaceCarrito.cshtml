@@ -7,4 +7,22 @@
         <svg class="icono" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8h12l1 12H5zM9 8V6a3 3 0 0 1 6 0v2" /></svg>
         Carrito <span class="contador" data-contador></span>
     </a>
+    @* Vista rápida del carrito: miniaturas de todo lo agregado, con cantidad y total, sin salir de la página. publico.js
+       la abre al tocar "Carrito" (sin JavaScript el enlace lleva a la página del carrito, como siempre). *@
+    <div class="mini-fondo" data-mini-fondo hidden></div>
+    <aside class="mini" id="mini-carrito" data-mini="@Model.Slug" data-precios="@(Model.MostrarPrecios ? "si" : "no")" role="dialog" aria-modal="true" aria-label="Tu carrito" hidden>
+        <div class="mini-cabecera">
+            <h2>Tu carrito</h2>
+            <button type="button" class="mini-cerrar" data-mini-cerrar aria-label="Cerrar carrito">
+                <svg class="icono" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            </button>
+        </div>
+        <p class="vacio" data-mini-vacio hidden>Tu carrito está vacío.</p>
+        <p class="aviso-agotado" data-mini-aviso role="status" hidden></p>
+        <ul class="lineas mini-lista" data-mini-lista aria-label="Productos del carrito"></ul>
+        <div class="mini-pie" data-mini-pie hidden>
+            <p class="total" data-mini-total hidden></p>
+            <a class="boton boton-grande" href="/@Model.Slug/carrito">Continuar con el pedido</a>
+        </div>
+    </aside>
 }

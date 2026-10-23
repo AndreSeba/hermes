@@ -1,10 +1,10 @@
-@page "/{slug}/carrito"
+﻿@page "/{slug}/carrito"
 @model CarritoModel
 @{
     var t = Model.Tienda;
 }
 <header class="cabecera cabecera-chica">
-    <a class="volver" href="/@t.Slug" aria-label="Volver a @t.Nombre">←</a>
+    <a class="volver" href="/@t.Slug" aria-label="Volver a @t.Nombre"><svg class="icono" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" /></svg></a>
     <a class="cabecera-nombre" href="/@t.Slug">@t.Nombre</a>
 </header>
 
@@ -72,4 +72,4 @@
     }
 </main>
 
-<script src="/js/publico.js" defer></script>
+<script src="/js/publico.js" asp-append-version="true" defer></script>

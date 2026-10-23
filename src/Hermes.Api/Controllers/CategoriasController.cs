@@ -3,6 +3,8 @@ using Hermes.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+using Hermes.Domain.Seguridad;
+
 namespace Hermes.Api.Controllers;
 
 [ApiController]
@@ -15,10 +17,12 @@ public class CategoriasController : ControllerBase
     public CategoriasController(ICategoriaService categoriaService) => _categoriaService = categoriaService;
 
     [HttpGet]
+    [Authorize(Policy = $"{Permisos.CategoriasVer}|{Permisos.ProductosVer}|{Permisos.ProductosCrear}|{Permisos.ProductosEditar}")]
     public async Task<ActionResult<IReadOnlyList<CategoriaDto>>> Listar([FromQuery] bool incluirInactivas, CancellationToken ct)
         => Ok(await _categoriaService.ListarAsync(incluirInactivas, ct));
 
     [HttpPost]
+    [Authorize(Policy = Permisos.CategoriasGestionar)]
     [ProducesResponseType(typeof(CategoriaDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<CategoriaDto>> Crear([FromBody] CrearCategoriaDto dto, CancellationToken ct)
@@ -28,6 +32,7 @@ public class CategoriasController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = Permisos.CategoriasGestionar)]
     [ProducesResponseType(typeof(CategoriaDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]

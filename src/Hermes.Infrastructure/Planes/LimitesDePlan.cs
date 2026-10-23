@@ -29,6 +29,17 @@ public class LimitesDePlan : ILimitesDePlan
                 $"Llegaste al límite de tu plan {plan.Nombre} ({maximo} productos). Mirá los planes en Mi plan para poder cargar más.");
     }
 
+    public async Task ExigirPoderSumarPersonaAsync(CancellationToken ct)
+    {
+        var tiendaId = _sesion.TiendaId ?? throw new SinTiendaEnSesionException();
+        var (plan, _) = await _planes.VigenteAsync(tiendaId, ct);
+        if (plan.MaxUsuarios is not { } maximo) return;
+
+        if (await _planes.UsuariosAsync(tiendaId, ct) >= maximo)
+            throw new LimiteDePlanException(
+                $"Tu plan {plan.Nombre} permite {maximo} persona(s) con acceso al panel (contándote a vos). Mirá los planes en Mi plan para sumar más.");
+    }
+
     public async Task ExigirAlmacenamientoAsync(long bytesNuevos, CancellationToken ct)
     {
         var tiendaId = _sesion.TiendaId ?? throw new SinTiendaEnSesionException();

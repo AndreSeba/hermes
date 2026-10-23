@@ -3,6 +3,8 @@ using Hermes.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+using Hermes.Domain.Seguridad;
+
 namespace Hermes.Api.Controllers;
 
 [ApiController]
@@ -16,21 +18,25 @@ public class ComprasController : ControllerBase
 
     // Más nuevas primero, por cursor. Vistas: Todas, EnCamino (sin recibir) y PorPagar (deuda con proveedores).
     [HttpGet]
+    [Authorize(Policy = Permisos.ComprasVer)]
     public async Task<ActionResult<PaginaDeComprasDto>> Listar([FromQuery] FiltroComprasDto filtro, CancellationToken ct)
         => Ok(await _compras.ListarAsync(filtro, ct));
 
     [HttpGet("resumen")]
+    [Authorize(Policy = Permisos.ComprasVer)]
     public async Task<ActionResult<ResumenComprasDto>> Resumen(CancellationToken ct)
         => Ok(await _compras.ResumenAsync(ct));
 
     // Comparador: el último costo de cada proveedor para un producto, el más barato primero.
     [HttpGet("comparador/{productoId:guid}")]
+    [Authorize(Policy = Permisos.ComprasVer)]
     [ProducesResponseType(typeof(IReadOnlyList<PrecioProveedorDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<IReadOnlyList<PrecioProveedorDto>>> Comparar(Guid productoId, CancellationToken ct)
         => Ok(await _compras.CompararAsync(productoId, ct));
 
     [HttpGet("{id:guid}")]
+    [Authorize(Policy = Permisos.ComprasVer)]
     [ProducesResponseType(typeof(CompraDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CompraDto>> Obtener(Guid id, CancellationToken ct)
@@ -38,6 +44,7 @@ public class ComprasController : ControllerBase
 
     // 201 si se registró; 200 si esa ClaveIdempotencia ya había registrado la compra (se devuelve la misma).
     [HttpPost]
+    [Authorize(Policy = Permisos.ComprasGestionar)]
     [ProducesResponseType(typeof(CompraDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(CompraDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -52,6 +59,7 @@ public class ComprasController : ControllerBase
 
     // Llegó la mercadería: suma stock, actualiza el costo y devuelve los avisos de margen.
     [HttpPost("{id:guid}/recibir")]
+    [Authorize(Policy = Permisos.ComprasGestionar)]
     [ProducesResponseType(typeof(ResultadoRecibirDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -59,12 +67,14 @@ public class ComprasController : ControllerBase
         => Ok(await _compras.RecibirAsync(id, ct));
 
     [HttpPost("{id:guid}/pagar")]
+    [Authorize(Policy = Permisos.ComprasGestionar)]
     [ProducesResponseType(typeof(CompraDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<CompraDto>> Pagar(Guid id, CancellationToken ct)
         => Ok(await _compras.PagarAsync(id, ct));
 
     [HttpPost("{id:guid}/anular")]
+    [Authorize(Policy = Permisos.ComprasGestionar)]
     [ProducesResponseType(typeof(CompraDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<CompraDto>> Anular(Guid id, CancellationToken ct)

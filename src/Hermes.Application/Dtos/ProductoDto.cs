@@ -28,10 +28,11 @@ public record GuardarProductoDto(
     // Llevar control de stock (apagado = "por encargo") y cuántas quedan para avisar "por agotarse".
     bool ControlaStock = true, int StockMinimo = ReglaStock.MinimoPorDefecto);
 
-// Parámetros de GET /productos. Cursor = el `siguiente` de la página anterior.
+// Parámetros de GET /productos. Cursor = el `siguiente` de la página anterior. `Pagina` (desde 1) pide una página
+// numerada (anterior / 1 2 3 / siguiente) y tiene prioridad sobre el cursor.
 public record FiltroProductosDto(
     string? Buscar = null, Guid? CategoriaId = null, bool RevisarPrecio = false, bool Archivados = false,
-    Guid? Cursor = null, int? Limite = null);
+    Guid? Cursor = null, int? Limite = null, int? Pagina = null);
 
-// Siguiente es null en la última página.
-public record PaginaDeProductosDto(IReadOnlyList<ProductoResumenDto> Items, Guid? Siguiente);
+// Siguiente es null en la última página. Total / Pagina / TotalPaginas solo vienen con una página numerada.
+public record PaginaDeProductosDto(IReadOnlyList<ProductoResumenDto> Items, Guid? Siguiente, int Total = 0, int Pagina = 1, int TotalPaginas = 1);

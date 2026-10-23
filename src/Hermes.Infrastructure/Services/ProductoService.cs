@@ -4,6 +4,7 @@ using Hermes.Application.Exceptions;
 using Hermes.Application.Interfaces;
 using Hermes.Domain;
 using Hermes.Domain.Entities;
+using Hermes.Domain.Seguridad;
 using Hermes.Infrastructure.Imagenes;
 using Hermes.Infrastructure.Persistence;
 using Hermes.Infrastructure.Stock;
@@ -27,11 +28,14 @@ public class ProductoService : IProductoService
 
     // `limites` opcional: sin él no hay límite de plan (las pruebas que no son de planes lo omiten).
     private readonly ILimitesDePlan? _limites;
+    // `usuario` opcional: sin él no hay restricciones por permisos (las pruebas que no son de roles lo omiten).
+    private readonly IUsuarioActual? _usuario;
 
     public ProductoService(HermesDbContext db, IImagenService imagenes, IAlmacenArchivos almacen, ITiendaActual sesion, TimeProvider reloj,
-        ILimitesDePlan? limites = null)
+        ILimitesDePlan? limites = null, IUsuarioActual? usuario = null)
     {
         _limites = limites;
+        _usuario = usuario;
         _db = db;
         _imagenes = imagenes;
         _almacen = almacen;
@@ -41,6 +45,10 @@ public class ProductoService : IProductoService
 
     // Leer a una variable ANTES de armar consultas (ver TiendaService: si lanza dentro de LINQ sale como 500).
     private Guid TiendaIdDeLaSesion() => _sesion.TiendaId ?? throw new SinTiendaEnSesionException();
+
+    // Quien no puede editar costos guarda el producto sin tocar el costo: uno nuevo queda sin costo cargado y uno existente
+    // conserva el que tenía (el costo que llegue en el formulario se ignora).
+    private bool PuedeEditarCostos => _usuario is null || _usuario.Tiene(Permisos.CostosEditar);
 
     // ───────────── Lectura ─────────────
 
@@ -62,9 +70,24 @@ public class ProductoService : IProductoService
         // Paginación por cursor: el Id es un Guid v7 (ordenado por fecha de creación), así que "más
         // nuevo primero" y "continuar después de este" son una sola condición. Sin OFFSET: no se saltea
         // ni se repite nada aunque se creen productos mientras se pagina.
-        if (filtro.Cursor is { } cursor) consulta = consulta.Where(p => p.Id.CompareTo(cursor) < 0);
+        // Con página numerada (`Pagina`) sí se usa Skip y se cuenta el total; es para pantallas con botones 1 2 3.
+        var totalProductos = 0;
+        var pagina = 1;
+        var ordenada = consulta.OrderByDescending(p => p.Id);
+        IQueryable<Producto> recorte;
+        if (filtro.Pagina is { } numero)
+        {
+            totalProductos = await consulta.CountAsync(ct);
+            pagina = Math.Clamp(numero, 1, Math.Max(1, (int)Math.Ceiling(totalProductos / (double)limite)));
+            recorte = ordenada.Skip((pagina - 1) * limite).Take(limite + 1);
+        }
+        else
+        {
+            if (filtro.Cursor is { } cursor) consulta = consulta.Where(p => p.Id.CompareTo(cursor) < 0);
+            recorte = consulta.OrderByDescending(p => p.Id).Take(limite + 1);
+        }
 
-        var filas = await consulta.OrderByDescending(p => p.Id).Take(limite + 1)
+        var filas = await recorte
             .Select(p => new
             {
                 p.Id, p.Nombre, p.Precio, p.Costo, p.CategoriaId,
@@ -94,7 +117,8 @@ public class ProductoService : IProductoService
                 f.ControlaStock ? total : null, ReglaStock.Estado(f.ControlaStock, total, f.StockMinimo));
         }).ToList();
 
-        return new PaginaDeProductosDto(items, hayMas ? items[^1].Id : null);
+        return new PaginaDeProductosDto(items, hayMas ? items[^1].Id : null, totalProductos, pagina,
+            Math.Max(1, (int)Math.Ceiling(totalProductos / (double)limite)));
     }
 
     public async Task<ProductoDto> ObtenerAsync(Guid id, CancellationToken ct)
@@ -119,6 +143,7 @@ public class ProductoService : IProductoService
         var ahora = _reloj.GetUtcNow();
         var producto = new Producto { CreadoEn = ahora, ActualizadoEn = ahora };
         Aplicar(producto, datos);
+        if (!PuedeEditarCostos) producto.Costo = 0m;
         for (var i = 0; i < datos.Variantes.Count; i++)
             producto.Variantes.Add(new Variante { Color = datos.Variantes[i].Color, Talla = datos.Variantes[i].Talla, Orden = i });
         for (var i = 0; i < datos.FotoIds.Count; i++)
@@ -137,7 +162,9 @@ public class ProductoService : IProductoService
             ?? throw new ProductoNoEncontradoException(id);
         var datos = await ValidarAsync(dto, tiendaId, productoId: id, ct);
 
+        var costoAnterior = producto.Costo;
         Aplicar(producto, datos);
+        if (!PuedeEditarCostos) producto.Costo = costoAnterior;
         // Con costeo, el costo del producto es el total de sus componentes: el costo directo que llegue se ignora
         // (se cambia desde el costeo).
         if (await _db.Costeos.AsNoTracking().FirstOrDefaultAsync(c => c.ProductoId == id, ct) is { } costeo)

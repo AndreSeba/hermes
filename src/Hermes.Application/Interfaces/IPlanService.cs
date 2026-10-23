@@ -11,6 +11,9 @@ public interface ILimitesDePlan
 
     // ¿Entran `bytesNuevos` más de fotos en su espacio?
     Task ExigirAlmacenamientoAsync(long bytesNuevos, CancellationToken ct);
+
+    // ¿Puede sumar una persona más al equipo? (cuenta al dueño y a las personas activas)
+    Task ExigirPoderSumarPersonaAsync(CancellationToken ct);
 }
 
 // El plan de la tienda de la SESIÓN: ver el suyo, ver los que hay y pedir uno (pagando por QR o transferencia fuera de la app).

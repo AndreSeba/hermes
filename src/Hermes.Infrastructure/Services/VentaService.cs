@@ -5,6 +5,7 @@ using Hermes.Application.Interfaces;
 using Hermes.Domain;
 using Hermes.Domain.Entities;
 using Hermes.Domain.Enums;
+using Hermes.Domain.Seguridad;
 using Hermes.Infrastructure.Imagenes;
 using Hermes.Infrastructure.Persistence;
 using Hermes.Infrastructure.Stock;
@@ -26,17 +27,43 @@ public class VentaService : IVentaService
     private readonly IAlmacenArchivos _almacen;
     private readonly ITiendaActual _sesion;
     private readonly TimeProvider _reloj;
+    private readonly IUsuarioActual? _usuario;
 
-    public VentaService(HermesDbContext db, IOperacionesStock stock, IAlmacenArchivos almacen, ITiendaActual sesion, TimeProvider reloj)
+    public VentaService(HermesDbContext db, IOperacionesStock stock, IAlmacenArchivos almacen, ITiendaActual sesion, TimeProvider reloj,
+        IUsuarioActual? usuario = null)
     {
         _db = db;
         _stock = stock;
         _almacen = almacen;
         _sesion = sesion;
         _reloj = reloj;
+        _usuario = usuario;
     }
 
     private Guid TiendaIdDeLaSesion() => _sesion.TiendaId ?? throw new SinTiendaEnSesionException();
+
+    // Quien no puede ver todas las ventas (ni el Inicio con los números del negocio) ve SOLO las que registró él.
+    private Guid? SoloLasDe =>
+        _usuario is { UsuarioId: { } id } u && !u.Tiene(Permisos.VentasVer) && !u.Tiene(Permisos.InicioVer) ? id : null;
+
+    private IQueryable<Venta> VentasVisibles()
+    {
+        var consulta = _db.Ventas.AsNoTracking().AsQueryable();
+        return SoloLasDe is { } id ? consulta.Where(v => v.UsuarioId == id) : consulta;
+    }
+
+    private IQueryable<VentaLinea> LineasVisibles()
+    {
+        var consulta = _db.VentaLineas.AsNoTracking().Where(l => !l.Venta!.Anulada);
+        return SoloLasDe is { } id ? consulta.Where(l => l.Venta!.UsuarioId == id) : consulta;
+    }
+
+    // Los nombres de quienes registraron las ventas (Usuario no es de la tienda: se pide solo por los Id que aparecen).
+    private async Task<Dictionary<Guid, string>> NombresAsync(IEnumerable<Guid?> usuarioIds, CancellationToken ct)
+    {
+        var ids = usuarioIds.Where(i => i.HasValue).Select(i => i!.Value).Distinct().ToList();
+        return ids.Count == 0 ? [] : await _db.Usuarios.AsNoTracking().Where(u => ids.Contains(u.Id)).ToDictionaryAsync(u => u.Id, u => u.Nombre, ct);
+    }
 
     // ───────────── Registrar ─────────────
 
@@ -64,6 +91,7 @@ public class VentaService : IVentaService
             MetodoPago = dto.MetodoPago,
             Cliente = cliente,
             ClaveIdempotencia = dto.ClaveIdempotencia,
+            UsuarioId = _usuario?.UsuarioId,
         };
         foreach (var l in pedidas.OrderBy(l => variantes[l.VarianteId].Orden))
         {
@@ -109,7 +137,7 @@ public class VentaService : IVentaService
             throw;
         }
 
-        return new ResultadoVenta(ADto(venta), true);
+        return new ResultadoVenta(ADto(venta, await NombresAsync([venta.UsuarioId], ct)), true);
     }
 
     private (List<LineaVentaDto> Lineas, string? Cliente) Validar(RegistrarVentaDto dto)
@@ -131,7 +159,7 @@ public class VentaService : IVentaService
     private async Task<VentaDto?> BuscarPorClaveAsync(Guid clave, CancellationToken ct)
     {
         var existente = await _db.Ventas.AsNoTracking().Include(v => v.Lineas).FirstOrDefaultAsync(v => v.ClaveIdempotencia == clave, ct);
-        return existente is null ? null : ADto(existente);
+        return existente is null ? null : ADto(existente, await NombresAsync([existente.UsuarioId], ct));
     }
 
     // ───────────── Lectura ─────────────
@@ -139,9 +167,9 @@ public class VentaService : IVentaService
     public async Task<VentaDto> ObtenerAsync(Guid id, CancellationToken ct)
     {
         TiendaIdDeLaSesion();
-        var venta = await _db.Ventas.AsNoTracking().Include(v => v.Lineas).FirstOrDefaultAsync(v => v.Id == id, ct)
+        var venta = await VentasVisibles().Include(v => v.Lineas).FirstOrDefaultAsync(v => v.Id == id, ct)
             ?? throw new VentaNoEncontradaException(id);
-        return ADto(venta);
+        return ADto(venta, await NombresAsync([venta.UsuarioId], ct));
     }
 
     public async Task<PaginaDeVentasDto> ListarAsync(FiltroVentasDto filtro, CancellationToken ct)
@@ -149,7 +177,7 @@ public class VentaService : IVentaService
         TiendaIdDeLaSesion();
         var limite = Math.Clamp(filtro.Limite ?? LimitePorDefecto, 1, LimiteMaximo);
 
-        var consulta = _db.Ventas.AsNoTracking().AsQueryable();
+        var consulta = VentasVisibles();
         if (!filtro.IncluirAnuladas) consulta = consulta.Where(v => !v.Anulada);
         if (filtro.Desde is { } desde) { var d = desde.UtcDateTime; consulta = consulta.Where(v => v.Fecha >= d); }
         if (filtro.Hasta is { } hasta) { var h = hasta.UtcDateTime; consulta = consulta.Where(v => v.Fecha < h); }
@@ -160,7 +188,8 @@ public class VentaService : IVentaService
         var hayMas = pagina.Count > limite;
         if (hayMas) pagina.RemoveAt(pagina.Count - 1);
 
-        var items = pagina.Select(ADtoResumen).ToList();
+        var nombres = await NombresAsync(pagina.Select(v => v.UsuarioId), ct);
+        var items = pagina.Select(v => ADtoResumen(v, nombres)).ToList();
         return new PaginaDeVentasDto(items, hayMas ? items[^1].Id : null);
     }
 
@@ -172,8 +201,8 @@ public class VentaService : IVentaService
 
         var desde = filtro.Desde.UtcDateTime;
         var hasta = desde.AddDays(filtro.Dias);
-        var filas = await _db.VentaLineas.AsNoTracking()
-            .Where(l => !l.Venta!.Anulada && l.Venta.Fecha >= desde && l.Venta.Fecha < hasta)
+        var filas = await LineasVisibles()
+            .Where(l => l.Venta!.Fecha >= desde && l.Venta.Fecha < hasta)
             .Select(l => new { l.VentaId, l.Venta!.Fecha, l.Cantidad, l.PrecioUnitario }).ToListAsync(ct);
 
         // El día de cada venta es el de quien mira: hora local = UTC − desfase (getTimezoneOffset es UTC − local).
@@ -191,7 +220,7 @@ public class VentaService : IVentaService
     {
         TiendaIdDeLaSesion();
         var limite = Math.Clamp(filtro.Limite ?? 5, 1, 20);
-        var lineas = _db.VentaLineas.AsNoTracking().Where(l => !l.Venta!.Anulada);
+        var lineas = LineasVisibles();
         if (filtro.Desde is { } desde) { var d = desde.UtcDateTime; lineas = lineas.Where(l => l.Venta!.Fecha >= d); }
         if (filtro.Hasta is { } hasta) { var h = hasta.UtcDateTime; lineas = lineas.Where(l => l.Venta!.Fecha < h); }
 
@@ -216,8 +245,8 @@ public class VentaService : IVentaService
     public async Task<ResumenVentasDto> ResumenAsync(FiltroPeriodoDto filtro, CancellationToken ct)
     {
         TiendaIdDeLaSesion();
-        var lineas = _db.VentaLineas.AsNoTracking().Where(l => !l.Venta!.Anulada);
-        var anuladas = _db.Ventas.AsNoTracking().Where(v => v.Anulada);
+        var lineas = LineasVisibles();
+        var anuladas = VentasVisibles().Where(v => v.Anulada);
         if (filtro.Desde is { } desde)
         {
             var d = desde.UtcDateTime;
@@ -247,12 +276,29 @@ public class VentaService : IVentaService
         return new ResumenVentasDto(filas.Select(f => f.VentaId).Distinct().Count(), unidades, total, ganancia, sinCosto, cantidadAnuladas);
     }
 
+    // Lo vendido por cada persona en el período. Sin el permiso de ver todo, solo aparece la propia.
+    public async Task<IReadOnlyList<VentaVendedorDto>> PorVendedorAsync(FiltroPeriodoDto filtro, CancellationToken ct)
+    {
+        TiendaIdDeLaSesion();
+        var lineas = LineasVisibles();
+        if (filtro.Desde is { } desde) { var d = desde.UtcDateTime; lineas = lineas.Where(l => l.Venta!.Fecha >= d); }
+        if (filtro.Hasta is { } hasta) { var h = hasta.UtcDateTime; lineas = lineas.Where(l => l.Venta!.Fecha < h); }
+
+        var filas = await lineas.Select(l => new { l.VentaId, l.Venta!.UsuarioId, l.Cantidad, l.PrecioUnitario }).ToListAsync(ct);
+        var nombres = await NombresAsync(filas.Select(f => f.UsuarioId), ct);
+        return filas.GroupBy(f => f.UsuarioId)
+            .Select(g => new VentaVendedorDto(
+                g.Key, g.Key is { } id ? nombres.GetValueOrDefault(id, "Sin nombre") : "Sin registrar",
+                g.Select(f => f.VentaId).Distinct().Count(), g.Sum(f => f.Cantidad), g.Sum(f => f.Cantidad * f.PrecioUnitario)))
+            .OrderByDescending(v => v.Total).ThenBy(v => v.Vendedor).ToList();
+    }
+
     // ───────────── Anular ─────────────
 
     public async Task<VentaDto> AnularAsync(Guid id, CancellationToken ct)
     {
         TiendaIdDeLaSesion();
-        var venta = await _db.Ventas.AsNoTracking().Include(v => v.Lineas).FirstOrDefaultAsync(v => v.Id == id, ct)
+        var venta = await VentasVisibles().Include(v => v.Lineas).FirstOrDefaultAsync(v => v.Id == id, ct)
             ?? throw new VentaNoEncontradaException(id);
         if (venta.Anulada) throw new VentaYaAnuladaException();
 
@@ -366,7 +412,7 @@ public class VentaService : IVentaService
         return (total, unidades, completa ? ganancia : null);
     }
 
-    private static VentaDto ADto(Venta v)
+    private static VentaDto ADto(Venta v, IReadOnlyDictionary<Guid, string> nombres)
     {
         var (total, unidades, ganancia) = Totales(v.Lineas);
         var lineas = v.Lineas.OrderBy(l => l.Id).Select(l => new VentaLineaDto(
@@ -374,15 +420,18 @@ public class VentaService : IVentaService
             l.CostoUnitario > 0 ? l.CostoUnitario : null, l.Cantidad * l.PrecioUnitario,
             l.CostoUnitario > 0 ? l.Cantidad * (l.PrecioUnitario - l.CostoUnitario) : null)).ToList();
         return new VentaDto(v.Id, Utc(v.Fecha), v.MetodoPago, v.Cliente, v.Anulada, v.AnuladaEn is { } a ? Utc(a) : null,
-            unidades, total, ganancia, lineas);
+            unidades, total, ganancia, lineas, Vendedor(v, nombres));
     }
 
-    private static VentaResumenDto ADtoResumen(Venta v)
+    private static string? Vendedor(Venta v, IReadOnlyDictionary<Guid, string> nombres)
+        => v.UsuarioId is { } id ? nombres.GetValueOrDefault(id) : null;
+
+    private static VentaResumenDto ADtoResumen(Venta v, IReadOnlyDictionary<Guid, string> nombres)
     {
         var (total, unidades, ganancia) = Totales(v.Lineas);
         var primeras = v.Lineas.OrderBy(l => l.Id).Take(2).Select(l => $"{l.Cantidad} {l.Descripcion}").ToList();
         var detalle = string.Join(" · ", primeras) + (v.Lineas.Count > 2 ? $" · y {v.Lineas.Count - 2} más" : "");
-        return new VentaResumenDto(v.Id, Utc(v.Fecha), v.MetodoPago, v.Cliente, v.Anulada, unidades, total, ganancia, detalle);
+        return new VentaResumenDto(v.Id, Utc(v.Fecha), v.MetodoPago, v.Cliente, v.Anulada, unidades, total, ganancia, detalle, Vendedor(v, nombres));
     }
 
     // "0.0194…": prioridad y id del último producto de la página anterior.

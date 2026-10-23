@@ -52,5 +52,9 @@ public class PlanesDeTienda
         return tiendaIds.ToDictionary(id => id, id => new Uso(productos.GetValueOrDefault(id), bytes.GetValueOrDefault(id)));
     }
 
+    // Personas con acceso al panel: el dueño más el equipo ACTIVO. Ignora el filtro global (el Id de la tienda es explícito).
+    public async Task<int> UsuariosAsync(Guid tiendaId, CancellationToken ct)
+        => 1 + await _db.Miembros.IgnoreQueryFilters().AsNoTracking().CountAsync(m => m.TiendaId == tiendaId && m.Activo, ct);
+
     public static decimal AMb(long bytes) => Math.Round(bytes / 1_048_576m, 1);
 }
