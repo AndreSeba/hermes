@@ -15,6 +15,12 @@
 \set ON_ERROR_STOP on
 select set_config('demo.dir', :'dir', false) \gset
 select set_config('demo.hash', :'hash', false) \gset
+-- Opcional: -v reales="C:/ruta/img-reales" usa fotos reales (pNN_K_miniatura|catalogo|detalle.jpg: la K-ésima foto del producto NN).
+\if :{?reales}
+\else
+  \set reales ''
+\endif
+select set_config('demo.reales', :'reales', false) \gset
 
 begin;
 
@@ -293,7 +299,7 @@ end $$;
 -- ───────────── La tienda, el equipo y el catálogo ─────────────
 do $$
 declare
-  dir text := current_setting('demo.dir'); hash text := current_setting('demo.hash');
+  dir text := current_setting('demo.dir'); hash text := current_setting('demo.hash'); reales text := coalesce(current_setting('demo.reales', true), '');
   t0 timestamptz := timestamptz '2026-04-20 09:30-04';
   tienda uuid := pg_temp.u7(timestamptz '2026-04-20 09:30-04');
   dueno uuid := pg_temp.u7(timestamptz '2026-04-20 09:00-04');
@@ -397,7 +403,9 @@ begin
       img := pg_temp.u7(t0 + (p.idx * interval '2 minute') + (k * interval '1 minute'));
       bytes := 0;
       foreach t in array array['miniatura', 'catalogo', 'detalle'] loop
-        if dir <> '' then
+        if reales <> '' then
+          arch := pg_read_binary_file(reales || '/p' || lpad(p.idx::text, 2, '0') || '_' || k || '_' || t || '.jpg'); ct := 'image/jpeg';
+        elsif dir <> '' then
           arch := pg_read_binary_file(dir || '/' || sl || '_' || t || '.png'); ct := 'image/png';
         else
           arch := convert_to(pg_temp.svg(p.tipo, pg_temp.color_hex(replace(lower(p.colores[k]), ' ', '-'))), 'UTF8'); ct := 'image/svg+xml';
