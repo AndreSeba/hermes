@@ -797,5 +797,56 @@ decisiones pendientes. Se trabaja un módulo a la vez, de punta a punta; al cerr
 - 2026-10-15: **M12 hecho** (salvo conectar una app de Meta real) — conexión con Instagram: OAuth con state firmado, token
   cifrado y renovado solo, sincronización cada 30 min a la bandeja con fotos, reconectar/desconectar + migración
   `AgregarConexionInstagram`. 367 pruebas unitarias. **Todos los módulos del plan (M1–M14) están hechos.**
+- 2026-10-19: **Tablero del Inicio** (ventas por día, más vendidos, comparación con el período anterior).
+- 2026-10-22: **Pedidos: confirmar aparta el stock** (movimientos `Reserva`/`LiberaReserva`; migración `ReservaDeStockEnPedidos`) y
+  **correo del proveedor** (migración `AgregarCorreoProveedor`).
+- 2026-10-23: **Equipo, roles y permisos** (migración `AgregarRolesYEquipo`, 407 pruebas): el dueño crea cuentas con contraseña
+  provisional, roles editables, costos solo con `costos.ver`, un vendedor ve solo sus ventas, límite de personas por plan. Panel con
+  menú, rutas y pantallas por permiso, pantallas Equipo y Roles, cambio de contraseña obligatorio y **barra móvil con botón Menú**.
+- 2026-10-23: **"Desde Instagram" oculto** en el panel (`INSTAGRAM_LISTO = false` en `src/diseno/secciones.ts`: la pantalla dice que se
+  está construyendo) hasta que haya una app de Meta aprobada. La bienvenida ya no lo promete.
+- 2026-10-23: **Producción actualizada**: las 3 migraciones nuevas aplicadas en Neon São Paulo (producción) y en Virginia (QA), y la pila
+  reconstruida en el VPS de Hostinger (el servidor no usa git: se sube `git archive` de `main` y se corre
+  `docker compose -f docker-compose.yml -f docker-compose.neon.yml up -d --build`, conservando el `.env`). El panel recibe la
+  dirección pública de las tiendas al compilar (`TIENDA_URL` → `VITE_TIENDA_URL`, derivado de `DOMINIO_TIENDA`): sin eso el enlace y
+  el QR de "Mi tienda" salían con `localhost:5014`.
+- 2026-10-23: **Tienda de demostración "Urbano Wear"** (ropa, 20 productos, 6 meses de movimiento: 1.131 ventas, 103 pedidos, 36
+  compras, 99 gastos, equipo con roles) en `scripts/demo-ropa/` (SQL puro; fotos dibujadas con GDI+, SVG dentro de la base o fotos
+  reales de Unsplash con `-v reales=`). Está en la base local y en QA (con dibujos SVG). Cuentas en `scripts/demo-ropa.local.json`.
 - `scripts/crear_demo.py` crea una tienda de DEMOSTRACIÓN en la base de desarrollo (3 productos con foto y stock) con el
   WhatsApp del dueño del proyecto; las credenciales quedan en `scripts/demo.local.json` (ignorado por git).
+
+## Pendiente (al 2026-10-23)
+
+**Para salir con el dominio propio**
+- **`micasero.tech`** (gratis el primer año en Hostinger; renueva a ~US$ 64): falta crear en el DNS dos registros A hacia el VPS
+  (`@` y `app` → `200.141.21.142`). Después: `DOMINIO_PANEL=app.micasero.tech` y `DOMINIO_TIENDA=micasero.tech` en el `.env` del
+  servidor, reiniciar (Caddy saca el HTTPS) y revisar `/salud`, el login y una tienda. Dejar un tiempo el dominio sslip.io. Apagar la
+  renovación automática y recordar el cambio a un `.com` unos 10 meses después.
+- Cambiar la contraseña de `hermes_app` en Neon (se compartió por chat) y rotar los secretos que hayan pasado por ahí.
+- Poner el nombre **Mi Casero** en la interfaz (hoy dice "Hermes" en varios lugares) y revisar la marca en SENAPI.
+
+**Datos de la tienda real (`menaje-7eb0`)**
+- Le falta el **WhatsApp**: sin él la tienda pública no muestra carrito ni botón de pedir.
+- Los 47 productos no tienen fotos (se cargaron de una planilla): subirlas, o mostrar un ícono neutro en lugar del cuadro blanco.
+
+**Producto**
+- **Tienda pública, primera tanda de mejoras** (analizada, no hecha): portada con patrón del color de la marca, chips con el color de
+  la tienda, precio destacado, botón "+" en la tarjeta (directo si hay una sola variante), barra flotante "Ver pedido", "Cargar más
+  productos" con los enlaces de página como respaldo. Segunda tanda: portada con foto propia y tipografía.
+- **Instagram**: conectar una app de Meta real (Advanced Access) y poner `INSTAGRAM_LISTO = true`.
+- Verificación de email y recuperar contraseña; invitar al equipo por email; auditoría de quién cambió qué; redirección de
+  direcciones viejas de tienda; búsqueda sin tildes (`unaccent`); idempotencia de los POST de stock; cobro automático y avisos de
+  vencimiento de planes; "Mi plan" sigue oculto (`MOSTRAR_MI_PLAN = false`).
+- Sesiones revocadas y bloqueo de login viven en memoria: con más de una instancia de la API, pasarlos a una caché compartida.
+
+**Pruebas y despliegue**
+- Los e2e del panel (`Hermes.Web/scripts/*.mjs`) no se actualizaron para los permisos, la barra móvil ni el Instagram oculto: pueden
+  fallar. La API sí tiene su e2e de equipo (45 verificaciones) y 407 pruebas unitarias.
+- **QA (Render)**: las ramas `qa` de los dos repos están 2 commits atrás de `main`; Render pide elegir el espacio de trabajo y no se
+  pudo revisar. La base de QA ya tiene las migraciones y la tienda de demostración.
+- La demo de ropa en QA usa dibujos SVG: las fotos reales (7,6 MB) necesitan Cloudflare R2 o el comando `copiar-fotos-a-r2`. Dos fotos
+  reales de poleras traen texto de otra marca.
+- Respaldos: Neon guarda 6 horas de historia; falta un respaldo programado fuera del servidor.
+- Repos: la rama `dev` está al día con `main`; el historial se limpió de menciones a Claude y falta que GitHub deje de mostrar al
+  colaborador "claude" (caché de la página). El repo `catalogo` sigue pendiente de borrar (lo decide el usuario).
