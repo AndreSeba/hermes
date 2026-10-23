@@ -78,6 +78,8 @@ services:
     build:
       context: ../..
       dockerfile: Hermes/deploy/Dockerfile.caddy
+      args:
+        TIENDA_URL: https://${DOMINIO_TIENDA:?Falta DOMINIO_TIENDA en .env}
     restart: unless-stopped
     depends_on:
       - api

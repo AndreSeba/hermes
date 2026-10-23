@@ -9,6 +9,9 @@ RUN pnpm install --frozen-lockfile
 COPY Hermes.Web/ ./
 # El panel llama a /api en el MISMO dominio (Caddy lo pasa a la API): sin CORS y sin otra dirección que configurar.
 ENV VITE_API_URL=""
+# La dirección pública de las tiendas (la del enlace y el QR que ve la dueña): se fija al compilar, desde DOMINIO_TIENDA.
+ARG TIENDA_URL
+ENV VITE_TIENDA_URL=$TIENDA_URL
 RUN pnpm build
 
 FROM caddy:2-alpine
