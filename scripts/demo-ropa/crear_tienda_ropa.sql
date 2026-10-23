@@ -15,14 +15,20 @@
 \set ON_ERROR_STOP on
 select set_config('demo.dir', :'dir', false) \gset
 select set_config('demo.hash', :'hash', false) \gset
--- Opcional: -v reales="C:/ruta/img-reales" usa fotos reales (pNN_K_miniatura|catalogo|detalle.jpg: la K-ésima foto del producto NN).
+-- Opcional: -v reales=1 -v fotos="ruta/fotos.sql" usa fotos reales. fotos.sql la arma generar_fotos_sql.ps1 (una tabla temporal t_foto con
+-- pNN_K_miniatura|catalogo|detalle.jpg: la K-ésima foto del producto NN); así corre también contra una base remota (Neon).
 \if :{?reales}
 \else
   \set reales ''
 \endif
 select set_config('demo.reales', :'reales', false) \gset
+\if :{?fotos}
+  \i :fotos
+\endif
 
 begin;
+-- Con un rol sujeto a la seguridad por fila (hermes_app) hay que decir que se trabaja sobre todas las tiendas; con un superusuario no cambia nada.
+select set_config('hermes.tienda', '*', true);
 
 -- ───────────── Limpieza (para poder repetir) ─────────────
 do $$
@@ -404,7 +410,8 @@ begin
       bytes := 0;
       foreach t in array array['miniatura', 'catalogo', 'detalle'] loop
         if reales <> '' then
-          arch := pg_read_binary_file(reales || '/p' || lpad(p.idx::text, 2, '0') || '_' || k || '_' || t || '.jpg'); ct := 'image/jpeg';
+          select f.datos into arch from t_foto f where f.nombre = 'p' || lpad(p.idx::text, 2, '0') || '_' || k || '_' || t || '.jpg'; ct := 'image/jpeg';
+          if arch is null then raise exception 'Falta la foto p%_%_%.jpg en t_foto', p.idx, k, t; end if;
         elsif dir <> '' then
           arch := pg_read_binary_file(dir || '/' || sl || '_' || t || '.png'); ct := 'image/png';
         else

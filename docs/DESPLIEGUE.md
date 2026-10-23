@@ -149,3 +149,29 @@ mirarla con calma** (`docker compose logs -f api`).
 - **Fotos a Cloudflare R2** cuando haya muchas tiendas (ver `Almacenamiento:Tipo` en docs/GUIA.md): hoy viven en Postgres y entran
   en los respaldos.
 - Más de un servidor: sacar `BloqueoDeLogin` (en memoria) a una caché compartida y migrar aparte (no al arrancar).
+
+## Ambiente de demostración (para mostrar el sistema en vivo)
+
+Un segundo ambiente en el MISMO servidor, con sus propios contenedores, direcciones, clave de sesiones y base de datos. Lo que se haga
+ahí (ventas de prueba, cuentas, cambios) no toca producción.
+
+- **Base:** una rama de Neon llamada `demo`, creada desde la de producción en São Paulo (misma región que el servidor, por eso es ágil).
+  Se limpió de datos reales y se cargó la tienda **Urbano Wear** (ropa, 6 meses de movimiento, fotos reales) con
+  `scripts/demo-ropa/crear_tienda_ropa.sql`. Entra con un rol propio, `hermes_demo` (sin privilegios especiales: le aplica la seguridad
+  por fila). La rama tiene ya las migraciones de producción de ese momento: cuando haya migraciones nuevas, aplicarlas también ahí.
+- **Archivos:** `deploy/docker-compose.demo.yml` (encima de la variante con Neon; reutiliza las imágenes ya compiladas),
+  `deploy/Dockerfile.caddy` (compila un segundo panel con la dirección de las tiendas de la demo) y los dos bloques nuevos del
+  `deploy/Caddyfile`.
+- **En el `.env` del servidor:** `DOMINIO_PANEL_DEMO`, `DOMINIO_TIENDA_DEMO`, `NEON_HOST_DEMO`, `DEMO_DB_PASSWORD` y `JWT_SECRET_DEMO`.
+- **Direcciones hoy:** panel `https://demo.200-141-21-142.sslip.io`, tienda `https://tienda-demo.200-141-21-142.sslip.io/urbano-wear`.
+- **Levantarlo / actualizarlo** (desde `/opt/hermes/Hermes/deploy`):
+  `docker compose -f docker-compose.yml -f docker-compose.neon.yml -f docker-compose.demo.yml up -d --build`. Si no se usa el tercer
+  archivo, el sistema funciona igual (los dos bloques de la demo quedan en direcciones locales sin uso).
+- **Rehacer los datos de la demo** (vuelve a dejar la tienda como nueva): en el servidor, `sh /opt/hermes/demo/cargar.sh` (usa
+  `crear_tienda_ropa.sql` y `fotos.sql`, que se arma con `scripts/demo-ropa/generar_fotos_sql.ps1`). Es seguro repetirlo.
+- **Cuentas de la demo:** `valeria.rojas@ejemplo.com` (dueña), `lucia.mamani@ejemplo.com` (encargada), `marco.vaca@ejemplo.com` y
+  `diego.suarez@ejemplo.com` (vendedores) y `rafael.mendez@ejemplo.com` (contador, solo ve). La contraseña está en
+  `scripts/demo-ropa.local.json` (no se sube a git): al estar en internet, cambiala si ya no la quieren compartir.
+- **Con el dominio propio:** cuando exista `micasero.tech`, usar por ejemplo `demo.micasero.tech` y `tienda-demo.micasero.tech`
+  (registros A hacia el servidor) y cambiar las dos variables `DOMINIO_*_DEMO`; el panel se vuelve a compilar con la dirección nueva.
+- **Neon:** la rama `demo` tiene su propio cómputo; si el plan gratuito se queda corto de horas, se puede suspender la rama desde la consola.

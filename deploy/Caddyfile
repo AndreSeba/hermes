@@ -50,3 +50,37 @@
 		reverse_proxy public:8080
 	}
 }
+
+# ───────────── Ambiente de DEMOSTRACIÓN (opcional: deploy/docker-compose.demo.yml) ─────────────
+# Sin las variables, los valores por defecto son direcciones locales sin uso (no piden certificados a nadie).
+{$DOMINIO_PANEL_DEMO:localhost:8481} {
+	import seguridad
+
+	handle /api/* {
+		reverse_proxy api-demo:8080
+	}
+	handle /archivos/* {
+		reverse_proxy api-demo:8080
+	}
+	handle {
+		root * /srv/panel-demo
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		@html path / /index.html
+		header @html Cache-Control "no-cache"
+		header X-Frame-Options DENY
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+{$DOMINIO_TIENDA_DEMO:localhost:8482} {
+	import seguridad
+
+	handle /archivos/* {
+		reverse_proxy api-demo:8080
+	}
+	handle {
+		reverse_proxy public-demo:8080
+	}
+}

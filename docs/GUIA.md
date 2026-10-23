@@ -810,6 +810,9 @@ decisiones pendientes. Se trabaja un módulo a la vez, de punta a punta; al cerr
   `docker compose -f docker-compose.yml -f docker-compose.neon.yml up -d --build`, conservando el `.env`). El panel recibe la
   dirección pública de las tiendas al compilar (`TIENDA_URL` → `VITE_TIENDA_URL`, derivado de `DOMINIO_TIENDA`): sin eso el enlace y
   el QR de "Mi tienda" salían con `localhost:5014`.
+- 2026-10-23: **Ambiente de demostración en el servidor** (para mostrar el sistema en vivo): segunda copia del sistema en el VPS, con su propia
+  base (rama `demo` de Neon São Paulo), clave de sesiones y direcciones demo.200-141-21-142.sslip.io / 	ienda-demo.200-141-21-142.sslip.io`. Ver
+  `docs/DESPLIEGUE.md` → *Ambiente de demostración*.
 - 2026-10-23: **Tienda de demostración "Urbano Wear"** (ropa, 20 productos, 6 meses de movimiento: 1.131 ventas, 103 pedidos, 36
   compras, 99 gastos, equipo con roles) en `scripts/demo-ropa/` (SQL puro; fotos dibujadas con GDI+, SVG dentro de la base o fotos
   reales de Unsplash con `-v reales=`). Está en la base local y en QA (con dibujos SVG). Cuentas en `scripts/demo-ropa.local.json`.
@@ -844,7 +847,8 @@ decisiones pendientes. Se trabaja un módulo a la vez, de punta a punta; al cerr
 - Los e2e del panel (`Hermes.Web/scripts/*.mjs`) no se actualizaron para los permisos, la barra móvil ni el Instagram oculto: pueden
   fallar. La API sí tiene su e2e de equipo (45 verificaciones) y 407 pruebas unitarias.
 - **QA (Render)**: las ramas `qa` de los dos repos están 2 commits atrás de `main`; Render pide elegir el espacio de trabajo y no se
-  pudo revisar. La base de QA ya tiene las migraciones y la tienda de demostración.
+  pudo revisar. La base de QA (Virginia) ya tiene las migraciones y la tienda de demostración. Para mostrar en vivo se usa el ambiente de
+  demostración del servidor (arriba), no Render.
 - La demo de ropa en QA usa dibujos SVG: las fotos reales (7,6 MB) necesitan Cloudflare R2 o el comando `copiar-fotos-a-r2`. Dos fotos
   reales de poleras traen texto de otra marca.
 - Respaldos: Neon guarda 6 horas de historia; falta un respaldo programado fuera del servidor.

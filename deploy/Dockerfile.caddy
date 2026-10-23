@@ -12,8 +12,12 @@ ENV VITE_API_URL=""
 # La dirección pública de las tiendas (la del enlace y el QR que ve la dueña): se fija al compilar, desde DOMINIO_TIENDA.
 ARG TIENDA_URL
 ENV VITE_TIENDA_URL=$TIENDA_URL
-RUN pnpm build
+RUN pnpm build && mv dist dist-panel
+# Ambiente de demostración (opcional): el mismo panel, pero con la dirección de SUS tiendas (deploy/docker-compose.demo.yml).
+ARG TIENDA_URL_DEMO=""
+RUN mkdir dist-demo && if [ -n "$TIENDA_URL_DEMO" ]; then VITE_TIENDA_URL="$TIENDA_URL_DEMO" pnpm build && rm -rf dist-demo && mv dist dist-demo; fi
 
 FROM caddy:2-alpine
 COPY Hermes/deploy/Caddyfile /etc/caddy/Caddyfile
-COPY --from=panel /web/dist /srv/panel
+COPY --from=panel /web/dist-panel /srv/panel
+COPY --from=panel /web/dist-demo /srv/panel-demo

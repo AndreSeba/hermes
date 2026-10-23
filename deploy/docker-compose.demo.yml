@@ -1,0 +1,53 @@
+# Segundo ambiente (DEMO / QA) en el MISMO servidor, para mostrar el sistema en vivo a clientes sin tocar los datos de verdad.
+# Va encima de la variante con Neon y reutiliza las imágenes que ya compila el ambiente principal (misma versión de código):
+#   docker compose -f docker-compose.yml -f docker-compose.neon.yml -f docker-compose.demo.yml up -d --build
+# Falta en .env: DOMINIO_PANEL_DEMO, DOMINIO_TIENDA_DEMO (registros A hacia el servidor, o nombres sslip.io), NEON_HOST_DEMO
+# (la dirección de la rama "demo" de Neon), DEMO_DB_PASSWORD (la clave del rol hermes_demo) y JWT_SECRET_DEMO (distinta de la de
+# producción: así un token de un ambiente no sirve en el otro). Ver docs/DESPLIEGUE.md → "Ambiente de demostración".
+# La base de la demo es una RAMA de Neon aparte: nada de lo que se haga acá llega a producción.
+
+x-demo: &demo
+  ConnectionStrings__HermesDb: "Host=${NEON_HOST_DEMO:?Falta NEON_HOST_DEMO en .env};Port=5432;Database=neondb;Username=hermes_demo;Password=${DEMO_DB_PASSWORD:?Falta DEMO_DB_PASSWORD en .env};Ssl Mode=Require;Maximum Pool Size=10"
+  Base__SeguridadPorFila: "true"
+  Base__MigrarAlArrancar: "false"
+  Jwt__SecretKey: ${JWT_SECRET_DEMO:?Falta JWT_SECRET_DEMO en .env}
+  Sentry__Dsn: ""
+  Proxy__Redes__0: 172.16.0.0/12
+  Proxy__Redes__1: 192.168.0.0/16
+  Proxy__Redes__2: 10.0.0.0/8
+  AllowedHosts: ${DOMINIO_PANEL_DEMO};${DOMINIO_TIENDA_DEMO};localhost
+  Publico__ArchivosBaseUrl: ""
+
+services:
+  api-demo:
+    image: hermes-api
+    pull_policy: never
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      <<: *demo
+      CorsOrigenesPermitidos__0: https://${DOMINIO_PANEL_DEMO}
+      # Sin Instagram ni limpieza de datos reales; sin límites de plan (la demo tiene decenas de productos y varias personas).
+      Planes__PlanSinSuscripcion: negocio
+      Limpieza__IntervaloMinutos: "1440"
+
+  public-demo:
+    image: hermes-public
+    pull_policy: never
+    restart: unless-stopped
+    depends_on:
+      - public
+    environment:
+      <<: *demo
+
+  caddy:
+    build:
+      args:
+        TIENDA_URL_DEMO: https://${DOMINIO_TIENDA_DEMO:?Falta DOMINIO_TIENDA_DEMO en .env}
+    environment:
+      DOMINIO_PANEL_DEMO: ${DOMINIO_PANEL_DEMO}
+      DOMINIO_TIENDA_DEMO: ${DOMINIO_TIENDA_DEMO}
+    depends_on:
+      - api-demo
+      - public-demo
