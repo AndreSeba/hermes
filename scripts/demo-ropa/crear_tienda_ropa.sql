@@ -82,11 +82,115 @@ create function pg_temp.metodo() returns text language sql as $$
   select case when random() < 0.40 then 'Efectivo' when random() < 0.62 then 'Qr' when random() < 0.55 then 'Transferencia' else 'Tarjeta' end
 $$;
 
+-- Fotos como SVG (cuando no hay carpeta de imágenes): la misma prenda que dibuja generar_imagenes.ps1, hecha de texto.
+create function pg_temp.mezcla(hex text, f numeric) returns text language sql as $$
+  select '#' || lpad(to_hex(round(r + (m - r) * abs(f))::int), 2, '0') || lpad(to_hex(round(g + (m - g) * abs(f))::int), 2, '0') || lpad(to_hex(round(b + (m - b) * abs(f))::int), 2, '0')
+  from (select ('x' || substr(hex, 2, 2))::bit(8)::int as r, ('x' || substr(hex, 4, 2))::bit(8)::int as g, ('x' || substr(hex, 6, 2))::bit(8)::int as b,
+               case when f < 0 then 0 else 255 end as m) c
+$$;
+
+create function pg_temp.color_hex(slug text) returns text language sql as $$
+  select case slug when 'blanco' then '#F4F3EF' when 'negro' then '#26262A' when 'gris' then '#9EA0A6' when 'azul-marino' then '#223458'
+    when 'celeste' then '#8DB6DE' when 'azul' then '#3C6AAE' when 'rojo' then '#B8303A' when 'verde-oliva' then '#5E6E3C' else '#CDB892' end
+$$;
+
+create function pg_temp.svg(p_tipo text, hex text) returns text language plpgsql as $$
+declare
+  fam text := case when p_tipo in ('polera','oversize','estampada','dry','polera-ml','polo') then 'top'
+                   when p_tipo in ('camisa','lino','cuadros','camisa-jean','camisa-mc') then 'camisa' else 'pantalon' end;
+  fondo text := case fam when 'top' then '#EFEBE4' when 'camisa' then '#E9EDF0' else '#ECE9E6' end;
+  borde text := pg_temp.mezcla(hex, -0.28); claro text := pg_temp.mezcla(hex, 0.2); osc text := pg_temp.mezcla(hex, -0.18);
+  luz boolean := (('x' || substr(hex, 2, 2))::bit(8)::int + ('x' || substr(hex, 4, 2))::bit(8)::int + ('x' || substr(hex, 6, 2))::bit(8)::int) > 600;
+  trazo text := case when luz then pg_temp.mezcla(hex, -0.35) else pg_temp.mezcla(hex, 0.35) end;
+  tinta text := case when luz then '#1F3A5F' else '#F2A33A' end;
+  oscuro text := pg_temp.mezcla(hex, -0.3); aclarado text := pg_temp.mezcla(hex, 0.35); lineas text := pg_temp.mezcla(hex, 0.4);
+  pts text; det text := ''; clip text := ''; largo int := 900;
+begin
+  pts := case p_tipo
+    when 'oversize' then '393.6,165 180.8,260 85.6,400 169.6,455 244.6,385 244.6,845 755.4,845 755.4,385 830.4,455 914.4,400 819.2,260 606.4,165'
+    when 'polera-ml' then '405,165 205,250 130,520 70,820 150,830 235,500 272,845 728,845 765,500 850,830 930,820 870,520 795,250 595,165'
+    when 'camisa-mc' then '400,160 215,255 130,420 215,470 272,400 272,850 728,850 728,400 785,470 870,420 785,255 600,160'
+    when 'camisa' then '400,160 215,255 150,520 105,800 175,815 245,520 272,850 728,850 755,520 825,815 895,800 850,520 785,255 600,160'
+    when 'lino' then '400,160 215,255 150,520 105,800 175,815 245,520 272,850 728,850 755,520 825,815 895,800 850,520 785,255 600,160'
+    when 'cuadros' then '400,160 215,255 150,520 105,800 175,815 245,520 272,850 728,850 755,520 825,815 895,800 850,520 785,255 600,160'
+    when 'camisa-jean' then '400,160 215,255 150,520 105,800 175,815 245,520 272,850 728,850 755,520 825,815 895,800 850,520 785,255 600,160'
+    when 'jean-slim' then '330,150 322,300 310,900 485,900 488,420 512,420 515,900 690,900 678,300 670,150'
+    when 'cargo' then '330,150 322,300 280,900 470,900 488,420 512,420 530,900 720,900 678,300 670,150'
+    when 'short' then '330,150 322,300 300,600 480,600 488,420 512,420 520,600 700,600 678,300 670,150'
+    when 'jogger' then '330,150 322,300 300,760 322,860 500,900 488,420 512,420 500,900 678,860 700,760 678,300 670,150'
+    when 'jean' then '330,150 322,300 300,900 480,900 488,420 512,420 520,900 700,900 678,300 670,150'
+    when 'vestir' then '330,150 322,300 300,900 480,900 488,420 512,420 520,900 700,900 678,300 670,150'
+    when 'chino' then '330,150 322,300 300,900 480,900 488,420 512,420 520,900 700,900 678,300 670,150'
+    else '405,165 215,260 130,400 205,455 272,385 272,845 728,845 728,385 795,455 870,400 785,260 595,165' end;
+  if p_tipo = 'short' then largo := 600; end if;
+
+  if fam = 'top' then
+    if p_tipo = 'polo' then
+      det := format($q$<polygon points='405,165 500,265 440,300 360,200' fill='%s'/><polygon points='595,165 500,265 560,300 640,200' fill='%s'/><line x1='500' y1='265' x2='500' y2='430' stroke='%s' stroke-width='4'/><circle cx='500' cy='313' r='8' fill='%s'/><circle cx='500' cy='373' r='8' fill='%s'/>$q$,
+                    claro, claro, trazo, borde, borde);
+    else
+      det := format($q$<ellipse cx='500' cy='175' rx='90' ry='62' fill='%s'/><path d='M410 175 A90 62 0 0 0 590 175' fill='none' stroke='%s' stroke-width='14'/><line x1='272' y1='835' x2='728' y2='835' stroke='%s' stroke-width='4'/>$q$, fondo, osc, osc);
+    end if;
+    if p_tipo = 'dry' then
+      det := det || format($q$<polygon points='272,420 322,420 322,845 272,845' fill='%s'/><polygon points='678,420 728,420 728,845 678,845' fill='%s'/>$q$, aclarado, aclarado);
+    end if;
+    if p_tipo = 'estampada' then
+      det := det || format($q$<circle cx='590' cy='390' r='30' fill='#F2A33A'/><polygon points='380,540 450,420 500,490 545,430 640,540' fill='%s'/><text x='410' y='598' font-family='Arial,sans-serif' font-weight='700' font-size='34' fill='%s'>ANDES</text>$q$, tinta, tinta);
+    end if;
+  elsif fam = 'camisa' then
+    if p_tipo = 'cuadros' then
+      clip := format($q$<clipPath id='c'><polygon points='%s'/></clipPath>$q$, pts);
+      det := $q$<g clip-path='url(#c)'>$q$
+        || (select string_agg(format($q$<line x1='%s' y1='100' x2='%s' y2='900' stroke='%s' stroke-width='14'/>$q$, x, x, oscuro), '') from generate_series(110, 890, 90) x)
+        || (select string_agg(format($q$<line x1='80' y1='%s' x2='920' y2='%s' stroke='#FFFFFF' stroke-opacity='0.43' stroke-width='10'/>$q$, y, y), '') from generate_series(130, 880, 90) y) || '</g>';
+    elsif p_tipo = 'lino' then
+      clip := format($q$<clipPath id='c'><polygon points='%s'/></clipPath>$q$, pts);
+      det := $q$<g clip-path='url(#c)'>$q$ || (select string_agg(format($q$<line x1='90' y1='%s' x2='910' y2='%s' stroke='#000000' stroke-opacity='0.16' stroke-width='2'/>$q$, y, y + 4), '') from generate_series(150, 880, 22) y) || '</g>';
+    end if;
+    det := det || format($q$<polygon points='400,160 500,235 440,300 345,195' fill='%s' stroke='%s' stroke-width='6'/><polygon points='600,160 500,235 560,300 655,195' fill='%s' stroke='%s' stroke-width='6'/><line x1='500' y1='235' x2='500' y2='850' stroke='%s' stroke-width='4'/>$q$,
+                         claro, borde, claro, borde, trazo)
+         || (select string_agg(format($q$<circle cx='500' cy='%s' r='8' fill='%s'/>$q$, y + 8, oscuro), '') from unnest(array[300, 400, 500, 600, 700, 790]) y)
+         || format($q$<rect x='560' y='420' width='85' height='95' fill='none' stroke='%s' stroke-width='4'/>$q$, trazo);
+    if p_tipo = 'camisa-jean' then
+      det := det || $q$<line x1='272' y1='190' x2='272' y2='840' stroke='#C9D4E4' stroke-width='3' stroke-dasharray='20 40'/><line x1='728' y1='190' x2='728' y2='840' stroke='#C9D4E4' stroke-width='3' stroke-dasharray='20 40'/>$q$;
+    end if;
+  else
+    det := format($q$<rect x='328' y='140' width='344' height='70' fill='%s' stroke='%s' stroke-width='6'/>$q$, pg_temp.mezcla(hex, -0.12), borde);
+    if p_tipo <> 'jogger' then
+      det := det || format($q$<rect x='360' y='130' width='14' height='90' fill='%s'/><rect x='440' y='130' width='14' height='90' fill='%s'/><rect x='560' y='130' width='14' height='90' fill='%s'/><rect x='640' y='130' width='14' height='90' fill='%s'/>$q$,
+                           oscuro, oscuro, oscuro, oscuro);
+    end if;
+    det := det || format($q$<line x1='500' y1='210' x2='500' y2='430' stroke='%s' stroke-width='4'/>$q$, trazo);
+    if p_tipo = 'jogger' then
+      det := det || format($q$<line x1='470' y1='210' x2='450' y2='330' stroke='%s' stroke-width='5'/><line x1='530' y1='210' x2='550' y2='330' stroke='%s' stroke-width='5'/>$q$, lineas, lineas);
+    else
+      det := det || format($q$<path d='M335 260 Q350 400 480 410' fill='none' stroke='%s' stroke-width='4'/><path d='M665 260 Q650 400 520 410' fill='none' stroke='%s' stroke-width='4'/>$q$, trazo, trazo);
+    end if;
+    if p_tipo = 'cargo' then
+      det := det || format($q$<rect x='300' y='520' width='92' height='120' fill='none' stroke='%s' stroke-width='4'/><rect x='608' y='520' width='92' height='120' fill='none' stroke='%s' stroke-width='4'/>$q$, trazo, trazo);
+    end if;
+    if p_tipo in ('jean', 'jean-slim') then
+      det := det || $q$<g stroke='#D9B45C' stroke-width='3' stroke-dasharray='14 10'><line x1='345' y1='230' x2='330' y2='880'/><line x1='655' y1='230' x2='670' y2='880'/><line x1='500' y1='440' x2='500' y2='880'/></g>$q$;
+    end if;
+    if p_tipo in ('vestir', 'chino') then
+      det := det || format($q$<line x1='400' y1='330' x2='392' y2='%s' stroke='%s' stroke-width='4'/><line x1='600' y1='330' x2='608' y2='%s' stroke='%s' stroke-width='4'/>$q$, largo - 20, trazo, largo - 20, trazo);
+    end if;
+  end if;
+
+  return $q$<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 1000' width='1000' height='1000'>$q$ || clip
+      || format($q$<rect width='1000' height='1000' fill='%s'/><ellipse cx='500' cy='915' rx='280' ry='30' fill='#000000' fill-opacity='0.16'/>$q$, fondo)
+      || format($q$<polygon points='%s' fill='%s' stroke='%s' stroke-width='6' stroke-linejoin='round'/>$q$, pts, hex, borde) || det || '</svg>';
+end $$;
+
+create function pg_temp.svg_logo() returns text language sql as $$
+  select $q$<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1000 1000' width='1000' height='1000'><rect width='1000' height='1000' fill='#F7F5F0'/><circle cx='500' cy='500' r='400' fill='#14532D'/><circle cx='500' cy='500' r='360' fill='none' stroke='#F2C94C' stroke-width='18'/><text x='500' y='590' text-anchor='middle' font-family='Arial,sans-serif' font-weight='700' font-size='260' fill='#F7F5F0'>UW</text></svg>$q$
+$$;
+
 -- ───────────── Estado de la simulación ─────────────
 create temp table t_cfg (tienda uuid, dueno uuid, lucia uuid, marco uuid, diego uuid);
 create temp table t_prod (
   idx int primary key, id uuid, nombre text, cat text, precio numeric, costo0 numeric, costo numeric, pop numeric, prov int,
-  controla boolean, colores text[], tallas text[], nfotos int, descr text, visible boolean, archivado boolean, minimo int);
+  controla boolean, colores text[], tallas text[], nfotos int, descr text, visible boolean, archivado boolean, minimo int, tipo text);
 create temp table t_var (id uuid primary key, prod int, color text, talla text, stock int, w numeric, objetivo int);
 create temp table t_cart (var uuid primary key, qty int);
 create temp table t_comp (id uuid, prov int, recibe date, ts timestamptz);
@@ -200,7 +304,7 @@ declare
   r_enc uuid := pg_temp.u7(timestamptz '2026-04-20 09:40-04');
   r_ven uuid := pg_temp.u7(timestamptz '2026-04-20 09:41-04');
   r_sol uuid := pg_temp.u7(timestamptz '2026-04-20 09:42-04');
-  p record; v record; img uuid; k int; sl text; tam text; ord int; c text; t text; bytes int; arch bytea; n int; w numeric; cw numeric;
+  p record; v record; img uuid; k int; sl text; ct text; tam text; ord int; c text; t text; bytes int; arch bytea; n int; w numeric; cw numeric;
   cat_p uuid := pg_temp.u7(timestamptz '2026-04-20 10:00-04'); cat_c uuid := pg_temp.u7(timestamptz '2026-04-20 10:01-04'); cat_n uuid := pg_temp.u7(timestamptz '2026-04-20 10:02-04');
 begin
   perform setseed(0.37);
@@ -265,7 +369,8 @@ begin
     (19, 'Short bermuda', 'N', 140, 105, 105, 0.45, 3, true, array['Beige','Azul','Negro'], array['30','32','34','36'], 2, 'Short de gabardina hasta la rodilla, con bolsillos laterales.', true, false, 3),
     (20, 'Pantalón chino', 'N', 250, 130, 130, 0.35, 2, true, array['Beige','Azul marino'], array['28','30','32','34','36'], 2, 'Corte recto y tela suave. Combina con camisa o polera.', false, false, 3);
 
-  update t_prod set id = pg_temp.u7(t0 + (idx * interval '2 minute'));
+  update t_prod set id = pg_temp.u7(t0 + (idx * interval '2 minute')),
+    tipo = (array['polera','oversize','estampada','polo','polera-ml','dry','estampada','camisa','lino','cuadros','camisa-jean','camisa-mc','camisa','jean','jean-slim','vestir','cargo','jogger','short','chino'])[idx];
 
   for p in select * from t_prod order by idx loop
     -- el costo del catálogo arranca en lo que costó la primera vez (el de la compra inicial lo vuelve a fijar)
@@ -292,10 +397,14 @@ begin
       img := pg_temp.u7(t0 + (p.idx * interval '2 minute') + (k * interval '1 minute'));
       bytes := 0;
       foreach t in array array['miniatura', 'catalogo', 'detalle'] loop
-        arch := pg_read_binary_file(dir || '/' || sl || '_' || t || '.png');
+        if dir <> '' then
+          arch := pg_read_binary_file(dir || '/' || sl || '_' || t || '.png'); ct := 'image/png';
+        else
+          arch := convert_to(pg_temp.svg(p.tipo, pg_temp.color_hex(replace(lower(p.colores[k]), ' ', '-'))), 'UTF8'); ct := 'image/svg+xml';
+        end if;
         bytes := bytes + length(arch);
         insert into hermes.archivos (clave, datos, content_type, bytes, creado_en)
-        values (tienda || '/imagenes/' || img || '/' || t || '.webp', arch, 'image/png', length(arch), t0);
+        values (tienda || '/imagenes/' || img || '/' || t || '.webp', arch, ct, length(arch), t0);
       end loop;
       insert into hermes.imagenes (id, tienda_id, ancho_original, alto_original, bytes_guardados, creada_en) values (img, tienda, 1000, 1000, bytes, t0);
       insert into hermes.producto_fotos (id, tienda_id, producto_id, imagen_id, orden) values (pg_temp.u7(t0), tienda, p.id, img, k);
@@ -305,9 +414,13 @@ begin
   -- Logo
   img := pg_temp.u7(t0 + interval '5 minute'); bytes := 0;
   foreach t in array array['miniatura', 'catalogo', 'detalle'] loop
-    arch := pg_read_binary_file(dir || '/logo_' || t || '.png');
+    if dir <> '' then
+      arch := pg_read_binary_file(dir || '/logo_' || t || '.png'); ct := 'image/png';
+    else
+      arch := convert_to(pg_temp.svg_logo(), 'UTF8'); ct := 'image/svg+xml';
+    end if;
     bytes := bytes + length(arch);
-    insert into hermes.archivos (clave, datos, content_type, bytes, creado_en) values (tienda || '/imagenes/' || img || '/' || t || '.webp', arch, 'image/png', length(arch), t0);
+    insert into hermes.archivos (clave, datos, content_type, bytes, creado_en) values (tienda || '/imagenes/' || img || '/' || t || '.webp', arch, ct, length(arch), t0);
   end loop;
   insert into hermes.imagenes (id, tienda_id, ancho_original, alto_original, bytes_guardados, creada_en) values (img, tienda, 1000, 1000, bytes, t0);
   update hermes.tiendas set logo_imagen_id = img where id = tienda;
