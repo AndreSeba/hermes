@@ -1,4 +1,4 @@
-﻿@using Hermes.Public
+@using Hermes.Public
 @{
     // Lo pone cada página (ver TiendaBase). Sin tienda (404 / error) se usa una página neutra.
     var tienda = ViewData["Tienda"] as TiendaPublicaDto;
@@ -58,5 +58,7 @@
 </head>
 <body>
     @RenderBody()
+    @* El nombre del producto (el mismo de Hermes.Web/src/marca.ts). *@
+    <p class="creado-con">Tienda creada con <strong>Mi Casero</strong></p>
 </body>
 </html>

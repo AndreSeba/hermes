@@ -144,7 +144,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.MapScalarApiReference(options =>
     {
-        options.Title = "Hermes API";
+        options.Title = "Mi Casero API";
     });
 }
 
