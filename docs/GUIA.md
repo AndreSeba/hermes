@@ -827,10 +827,10 @@ decisiones pendientes. Se trabaja un módulo a la vez, de punta a punta; al cerr
   servidor, reiniciar (Caddy saca el HTTPS) y revisar `/salud`, el login y una tienda. Dejar un tiempo el dominio sslip.io. Apagar la
   renovación automática y recordar el cambio a un `.com` unos 10 meses después.
 - Cambiar la contraseña de `hermes_app` en Neon (se compartió por chat) y rotar los secretos que hayan pasado por ahí.
-- Poner el nombre **Mi Casero** en la interfaz (hoy dice "Hermes" en varios lugares) y revisar la marca en SENAPI.
+- Revisar la marca **Mi Casero** en SENAPI (el nombre ya está en la interfaz desde el 2026-10-24).
 
 **Datos de la tienda real (`menaje-7eb0`)**
-- Le falta el **WhatsApp**: sin él la tienda pública no muestra carrito ni botón de pedir.
+- Le falta el **WhatsApp**: sin él la tienda pública no muestra carrito ni botón de pedir. (La tienda de demostración ya tiene el 76815206.)
 - Los 47 productos no tienen fotos (se cargaron de una planilla): subirlas, o mostrar un ícono neutro en lugar del cuadro blanco.
 
 **Producto**
